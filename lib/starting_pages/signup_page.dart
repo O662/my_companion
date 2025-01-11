@@ -22,10 +22,11 @@ class _SignupPageState extends State<SignupPage> {
         );
         // Optionally, update the user's display name
         await userCredential.user!.updateDisplayName(_nameController.text);
-        // Navigate to the home page
-        Navigator.pushReplacement(
+        // Navigate to the home page and remove all previous routes
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
+          (Route<dynamic> route) => false,
         );
       } on FirebaseAuthException catch (e) {
         // Handle signup errors here

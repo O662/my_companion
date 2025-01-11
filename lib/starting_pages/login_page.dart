@@ -19,10 +19,11 @@ class _LoginPageState extends State<LoginPage> {
           email: _emailController.text,
           password: _passwordController.text,
         );
-        // Navigate to the home page
-        Navigator.pushReplacement(
+        // Navigate to the home page and remove all previous routes
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
+          (Route<dynamic> route) => false,
         );
       } on FirebaseAuthException catch (e) {
         // Handle login errors here
