@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../home.dart';
 
 class SignupPage extends StatefulWidget {
@@ -9,7 +10,8 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -21,7 +23,15 @@ class _SignupPageState extends State<SignupPage> {
           password: _passwordController.text,
         );
         // Optionally, update the user's display name
-        await userCredential.user!.updateDisplayName(_nameController.text);
+        await userCredential.user!.updateDisplayName('${_firstNameController.text} ${_lastNameController.text}');
+
+        // Save user info to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+          'first_name': _firstNameController.text,
+          'last_name': _lastNameController.text,
+          'email': _emailController.text,
+        });
+
         // Navigate to the home page and remove all previous routes
         Navigator.pushAndRemoveUntil(
           context,
@@ -46,11 +56,21 @@ class _SignupPageState extends State<SignupPage> {
           child: Column(
             children: [
               TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
+                controller: _firstNameController,
+                decoration: InputDecoration(labelText: 'First Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
+                    return 'Please enter your first name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _lastNameController,
+                decoration: InputDecoration(labelText: 'Last Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your last name';
                   }
                   return null;
                 },
