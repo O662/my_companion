@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'home.dart';
 import 'starting_pages/welcome_page.dart';
 import 'firebase_options.dart';
+import 'profile.dart';
+import 'health.dart';
+import 'finances.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,10 +24,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      debugShowCheckedModeBanner:
-          false, // Add this line to remove the debug banner
-
+      debugShowCheckedModeBanner: false, // Add this line to remove the debug banner
       home: AuthCheck(),
+      routes: {
+        '/profile': (context) => ProfilePage(), // Add the profile route
+        '/health': (context) => HealthPage(),
+        '/finance': (context) => FinancesPage(),
+      },
     );
   }
 }
