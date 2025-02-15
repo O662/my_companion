@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'home.dart';
+import 'life.dart';
 import 'finances.dart';
+import 'focus.dart';
+import 'bottom_nav_bar.dart';
 
 class HealthPage extends StatefulWidget {
   @override
@@ -8,7 +11,7 @@ class HealthPage extends StatefulWidget {
 }
 
 class _HealthPageState extends State<HealthPage> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 2;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -24,13 +27,25 @@ class _HealthPageState extends State<HealthPage> {
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HealthPage()),
+          MaterialPageRoute(builder: (context) => LifePage()),
         );
         break;
       case 2:
         Navigator.pushReplacement(
           context,
+          MaterialPageRoute(builder: (context) => HealthPage()),
+        );
+        break;
+      case 3:
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(builder: (context) => FinancesPage()),
+        );
+        break;
+      case 4:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => FocusPage()),
         );
         break;
     }
@@ -45,24 +60,9 @@ class _HealthPageState extends State<HealthPage> {
       body: Center(
         child: Text('Welcome to the Health Page!'),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.health_and_safety),
-            label: 'Health',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Finance',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        onTap: _onItemTapped,
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
     );
   }

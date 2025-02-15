@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io'; 
-import 'profile.dart'; 
+import 'dart:io';
+import 'profile.dart';
 import 'life.dart';
-import 'health.dart'; 
-import 'finances.dart'; 
+import 'health.dart';
+import 'finances.dart';
+import 'focus.dart';
+import 'bottom_nav_bar.dart'; // Ensure this import statement is correct
 
 class HomePage extends StatefulWidget {
   @override
@@ -79,6 +81,12 @@ class _HomePageState extends State<HomePage> {
           MaterialPageRoute(builder: (context) => FinancesPage()),
         );
         break;
+      case 4:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => FocusPage()),
+        );
+        break;
     }
   }
 
@@ -107,28 +115,9 @@ class _HomePageState extends State<HomePage> {
       body: Center(
         child: Text('Hi $_firstName! Welcome to the Home Page!'),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem( // Add this item for the new page
-            icon: Icon(Icons.nature_people),
-            label: 'Life',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.health_and_safety),
-            label: 'Health',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Finance',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color.fromARGB(255, 114, 7, 124),
-        onTap: _onItemTapped,
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
     );
   }

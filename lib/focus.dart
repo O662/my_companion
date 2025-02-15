@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'life.dart';
 import 'health.dart';
-import 'focus.dart';
+import 'finances.dart';
 import 'bottom_nav_bar.dart';
 
 
-class FinancesPage extends StatefulWidget {
+class FocusPage extends StatefulWidget {
   @override
-  _FinancePageState createState() => _FinancePageState();
+  _FocusPageState createState() => _FocusPageState();
 }
 
-class _FinancePageState extends State<FinancesPage> {
-  int _selectedIndex = 3;
+class _FocusPageState extends State<FocusPage> {
+  int _selectedIndex = 4;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -51,14 +51,15 @@ class _FinancePageState extends State<FinancesPage> {
         break;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Finance'),
+        title: Text('Focus'),
       ),
       body: Center(
-        child: Text('Welcome to the Finance Page!'),
+        child: Text('Welcome to the Focus Page!'),
       ),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex,
