@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io'; 
 import 'profile.dart'; 
+import 'life.dart';
 import 'health.dart'; 
 import 'finances.dart'; 
 
@@ -63,10 +64,16 @@ class _HomePageState extends State<HomePage> {
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HealthPage()),
+          MaterialPageRoute(builder: (context) => LifePage()),
         );
         break;
       case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HealthPage()),
+        );
+        break;
+      case 3:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => FinancesPage()),
@@ -106,6 +113,10 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
+          BottomNavigationBarItem( // Add this item for the new page
+            icon: Icon(Icons.nature_people),
+            label: 'Life',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.health_and_safety),
             label: 'Health',
@@ -116,7 +127,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: const Color.fromARGB(255, 114, 7, 124),
         onTap: _onItemTapped,
       ),
     );
