@@ -32,7 +32,7 @@ class BottomNavBar extends StatelessWidget {
           label: 'Finance',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.center_focus_strong),
+          icon: Icon(Icons.home),
           label: 'Focus',
         ),
       ],
