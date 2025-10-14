@@ -10,9 +10,6 @@ class HebPluFlashcardsPage extends StatefulWidget {
 class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
   final List<Map<String, String>> _flashcards = [
     {"name": "Bananas", "plu": "4011"},
-    {"name": "Avocados", "plu": "4046"},
-    {"name": "Tomatoes", "plu": "4063"},
-    {"name": "Broccoli", "plu": "4060"},
   ];
   int _currentIndex = 0;
   final TextEditingController _controller = TextEditingController();
