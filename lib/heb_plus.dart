@@ -11,9 +11,6 @@ class HebPlusPage extends StatefulWidget {
 class _HebPlusPageState extends State<HebPlusPage> {
   final List<Map<String, String>> _pluList = [
     {"name": "Bananas", "plu": "4011"},
-    {"name": "Avocados", "plu": "4046"},
-    {"name": "Tomatoes", "plu": "4063"},
-    {"name": "Broccoli", "plu": "4060"},
   ];
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _pluController = TextEditingController();
