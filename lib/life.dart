@@ -3,7 +3,8 @@ import 'home.dart';
 import 'health.dart';
 import 'finances.dart';
 import 'focus.dart';
-import 'bottom_nav_bar.dart'; 
+import 'bottom_nav_bar.dart';
+import 'flashcards.dart';
 
 class LifePage extends StatefulWidget {
   @override
@@ -58,13 +59,27 @@ class _LifePageState extends State<LifePage> {
         title: Text('Life'),
       ),
       body: Center(
-        child: Text('Welcome to the Life Page!'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Welcome to the Life Page!'),
+            SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FlashcardsPage()),
+                );
+              },
+              child: Text('Go to Flashcards'),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),
     );
-    
   }
 }
