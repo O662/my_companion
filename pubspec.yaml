@@ -34,6 +34,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   firebase_core: ^4.2.0
+  geolocator: ^10.1.0
+  http: ^1.2.0
+  geocoding: ^2.1.0
 
   firebase_auth: ^6.1.1
   cloud_firestore: ^6.0.3
