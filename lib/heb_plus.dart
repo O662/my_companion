@@ -9,9 +9,30 @@ class HebPlusPage extends StatefulWidget {
 }
 
 class _HebPlusPageState extends State<HebPlusPage> {
-  final List<Map<String, String>> _pluList = [
-    {"name": "Bananas", "plu": "4011"},
-  ];
+  List<Map<String, String>> _pluList = [];
+  bool _csvLoaded = false;
+  @override
+  void initState() {
+    super.initState();
+    _loadCsv();
+  }
+
+  Future<void> _loadCsv() async {
+    final csvString = await DefaultAssetBundle.of(context).loadString('lib/assets/hebplus/HEBplus.csv');
+    final lines = csvString.split('\n');
+    final items = <Map<String, String>>[];
+    for (var line in lines) {
+      if (line.trim().isEmpty) continue;
+      final parts = line.split(',');
+      if (parts.length >= 2) {
+        items.add({"name": parts[0].replaceAll('"', ''), "plu": parts[1]});
+      }
+    }
+    setState(() {
+      _pluList = items;
+      _csvLoaded = true;
+    });
+  }
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _pluController = TextEditingController();
   int? _editingIndex;
@@ -93,20 +114,18 @@ class _HebPlusPageState extends State<HebPlusPage> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
-                itemCount: _pluList.length,
-                itemBuilder: (context, index) {
-                  final item = _pluList[index];
-                  return ListTile(
-                    title: Text(item["name"] ?? ''),
-                    subtitle: Text('PLU: ${item["plu"] ?? ''}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _editPLU(index),
+              child: !_csvLoaded
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: _pluList.length,
+                      itemBuilder: (context, index) {
+                        final item = _pluList[index];
+                        return ListTile(
+                          title: Text(item["name"] ?? ''),
+                          subtitle: Text('PLU: ${item["plu"] ?? ''}'),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
