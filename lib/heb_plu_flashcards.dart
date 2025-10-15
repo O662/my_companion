@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+  int _hintLength = 0;
+  int _score = 0;
+  bool _finished = false;
 
 class HebPluFlashcardsPage extends StatefulWidget {
   const HebPluFlashcardsPage({Key? key}) : super(key: key);
@@ -49,20 +52,40 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
   void _checkAnswer() {
     final userInput = _controller.text.trim();
     final correctPlu = _flashcards[_currentIndex]["plu"];
-    setState(() {
-      if (userInput == correctPlu) {
-        _feedback = "Correct!";
-      } else {
+    if (userInput == correctPlu) {
+      setState(() {
+        _feedback = null;
+        _score++;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Correct!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _nextCard();
+        }
+      });
+    } else {
+      setState(() {
         _feedback = "Incorrect. Try again.";
-      }
-    });
+      });
+    }
   }
 
   void _nextCard() {
+  _hintLength = 0;
     setState(() {
-      _currentIndex = (_currentIndex + 1) % _flashcards.length;
-      _controller.clear();
-      _feedback = null;
+      if (_currentIndex + 1 >= _flashcards.length) {
+        _finished = true;
+      } else {
+        _currentIndex++;
+        _controller.clear();
+        _feedback = null;
+      }
     });
   }
 
@@ -75,46 +98,93 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Produce: ${card["name"]}',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Enter PLU',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _checkAnswer,
-                child: const Text('Check'),
-              ),
-              if (_feedback != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _feedback!,
-                  style: TextStyle(
-                    color: _feedback == "Correct!" ? Colors.green : Colors.red,
-                    fontSize: 18,
+        child: _finished
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'You got $_score out of ${_flashcards.length} correct!',
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _score = 0;
+                        _finished = false;
+                        _currentIndex = 0;
+                        _controller.clear();
+                        _feedback = null;
+                        _loadCsv();
+                      });
+                    },
+                    child: const Text('Practice Again'),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Return to HEB PLU\'s Page'),
+                  ),
+                ],
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Produce: ${card["name"]}',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    if (_hintLength > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12.0, bottom: 4.0),
+                        child: Text(
+                          'Hint: ${card["plu"]!.substring(0, _hintLength)}',
+                          style: const TextStyle(fontSize: 20, color: Colors.blue),
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _controller,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Enter PLU',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          final plu = card["plu"] ?? "";
+                          if (_hintLength < plu.length) {
+                            _hintLength++;
+                          }
+                        });
+                      },
+                      child: const Text('Hint'),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _checkAnswer,
+                      child: const Text('Check'),
+                    ),
+                    if (_feedback != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _feedback!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                    // ...existing code...
+                  ],
                 ),
-              ],
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _nextCard,
-                child: const Text('Next'),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
