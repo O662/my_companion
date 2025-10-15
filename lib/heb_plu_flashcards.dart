@@ -19,22 +19,27 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
 
   Future<void> _loadCsv() async {
     // Load CSV from assets
-    final csvString = await DefaultAssetBundle.of(context).loadString('assets/hebplus/HEBplus.csv');
+    final csvString = await DefaultAssetBundle.of(context).loadString('lib/assets/hebplus/HEBplus.csv');
     final lines = csvString.split('\n');
     final items = <Map<String, String>>[];
     for (var line in lines) {
       if (line.trim().isEmpty) continue;
       final parts = line.split(',');
       if (parts.length >= 2) {
-        items.add({"name": parts[0].replaceAll('"', ''), "plu": parts[1]});
+        final name = parts[0].replaceAll('"', '').replaceAll(':', '').trim();
+        final plu = parts[1].replaceAll(':', '').trim();
+        items.add({"name": name, "plu": plu});
       }
     }
+    // Pick 8 random items for flashcards
+    items.shuffle();
+    final selected = items.length >= 8 ? items.sublist(0, 8) : items;
     setState(() {
       _csvItems = items;
       _csvLoaded = true;
-      if (_flashcards.isEmpty && items.isNotEmpty) {
-        _flashcards.addAll(items);
-      }
+      _flashcards.clear();
+      _flashcards.addAll(selected);
+      _currentIndex = 0;
     });
   }
   int _currentIndex = 0;
@@ -107,7 +112,6 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
                 onPressed: _nextCard,
                 child: const Text('Next'),
               ),
-              // ...existing code...
             ],
           ),
         ),
