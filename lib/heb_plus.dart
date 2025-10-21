@@ -1,5 +1,18 @@
 import 'package:flutter/material.dart';
 import 'heb_plu_flashcards.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Helper to load persisted struggled PLUs (name|plu strings)
+Future<List<Map<String, String>>> _loadPersistedStruggledPlu() async {
+  final prefs = await SharedPreferences.getInstance();
+  final list = prefs.getStringList('struggledPlu') ?? [];
+  final result = <Map<String, String>>[];
+  for (var item in list) {
+    final parts = item.split('|');
+    if (parts.length == 2) result.add({'name': parts[0], 'plu': parts[1]});
+  }
+  return result;
+}
 
 class HebPlusPage extends StatefulWidget {
   const HebPlusPage({Key? key}) : super(key: key);
@@ -85,6 +98,77 @@ class _HebPlusPageState extends State<HebPlusPage> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final items = await _loadPersistedStruggledPlu();
+                  if (items.isEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('No difficult PLUs'),
+                        content: const Text('You have no saved difficult PLUs to study.'),
+                        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+                      ),
+                    );
+                    return;
+                  }
+                  // Shuffle and take up to 8 items for a limited study session
+                  items.shuffle();
+                  final selected = items.length > 8 ? items.sublist(0, 8) : items;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => HebPluFlashcardsPage(initialFlashcards: selected)),
+                  );
+                },
+                child: const Text('Study Difficult PLUs'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.orange,
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final items = await _loadPersistedStruggledPlu();
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Difficult PLUs'),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: items.isEmpty
+                            ? const Text('No difficult PLUs saved yet.')
+                            : ListView(
+                                shrinkWrap: true,
+                                children: items
+                                    .map((e) => ListTile(
+                                          title: Text(e['name'] ?? ''),
+                                          subtitle: Text('PLU: ${e['plu'] ?? ''}'),
+                                        ))
+                                    .toList(),
+                              ),
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+                      ],
+                    ),
+                  );
+                },
+                child: const Text('View Difficult PLUs'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Colors.red,
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
