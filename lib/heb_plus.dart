@@ -85,6 +85,7 @@ class _HebPlusPageState extends State<HebPlusPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Shared button style for the top action buttons
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -128,9 +129,9 @@ class _HebPlusPageState extends State<HebPlusPage> {
                 },
                 child: const Text('Study Difficult PLUs'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   backgroundColor: Colors.orange,
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -166,33 +167,43 @@ class _HebPlusPageState extends State<HebPlusPage> {
                 },
                 child: const Text('View Difficult PLUs'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   backgroundColor: Colors.red,
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            Row(
+            const Divider(height: 1, thickness: 1),
+            const SizedBox(height: 12),
+            ExpansionTile(
+              title: const Text('Manage PLUs'),
+              subtitle: const Text('Add or edit produce and PLU'),
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Produce Name'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(labelText: 'Produce Name'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _pluController,
+                        decoration: const InputDecoration(labelText: 'PLU'),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          onPressed: _addOrUpdatePLU,
+                          child: Text(_editingIndex == null ? 'Add' : 'Update'),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _pluController,
-                    decoration: const InputDecoration(labelText: 'PLU'),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addOrUpdatePLU,
-                  child: Text(_editingIndex == null ? 'Add' : 'Update'),
                 ),
               ],
             ),

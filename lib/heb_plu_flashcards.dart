@@ -107,6 +107,14 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
         // only count correct if no hint was used
         if (_hintLength == 0) {
           _score++;
+          // If the user got this correct without a hint, remove it from the
+          // session and persisted struggled lists (they've mastered it).
+          _sessionStruggledPlu.removeWhere((e) => e['plu'] == currentCard['plu']);
+          final before = _struggledPlu.length;
+          _struggledPlu.removeWhere((e) => e['plu'] == currentCard['plu']);
+          if (_struggledPlu.length != before) {
+            _saveStruggledPlu();
+          }
         } else {
           // used a hint: record as struggled
           if (!_sessionStruggledPlu.any((e) => e['plu'] == currentCard['plu'])) {
