@@ -5,7 +5,6 @@ import 'health.dart';
 import 'finances.dart';
 import 'bottom_nav_bar.dart';
 
-
 class FocusPage extends StatefulWidget {
   @override
   _FocusPageState createState() => _FocusPageState();

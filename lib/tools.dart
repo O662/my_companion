@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'health.dart';
 import 'finances.dart';
-import 'focus.dart';
+
 import 'bottom_nav_bar.dart';
 import 'flashcards.dart';
 
@@ -44,10 +44,6 @@ class _ToolsPageState extends State<ToolsPage> {
         );
         break;
       case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FocusPage()),
-        );
         break;
     }
   }

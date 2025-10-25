@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'tools.dart';
 import 'health.dart';
-import 'focus.dart';
+
 import 'bottom_nav_bar.dart';
 
 
@@ -44,10 +44,6 @@ class _FinancePageState extends State<FinancesPage> {
         );
         break;
       case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FocusPage()),
-        );
         break;
     }
   }

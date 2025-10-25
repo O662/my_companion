@@ -6,7 +6,7 @@ import 'profile.dart';
 import 'tools.dart';
 import 'health.dart';
 import 'finances.dart';
-import 'focus.dart';
+
 import 'bottom_nav_bar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -176,10 +176,6 @@ class _HomePageState extends State<HomePage> {
         );
         break;
       case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FocusPage()),
-        );
         break;
     }
   }

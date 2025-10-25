@@ -3,7 +3,7 @@ import '../home.dart';
 import '../tools.dart';
 import '../health.dart';
 import '../finances.dart';
-import '../focus.dart';
+
 
 class BottomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -20,8 +20,8 @@ class BottomNavBar extends StatelessWidget {
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.nature_people),
-          label: 'Life',
+          icon: Icon(Icons.build),
+          label: 'Tools',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.health_and_safety),
@@ -31,10 +31,7 @@ class BottomNavBar extends StatelessWidget {
           icon: Icon(Icons.attach_money),
           label: 'Finance',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Focus',
-        ),
+        // Removed Focus nav item
       ],
       currentIndex: selectedIndex,
       selectedItemColor: const Color.fromARGB(255, 114, 7, 124),

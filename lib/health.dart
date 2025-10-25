@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'tools.dart';
 import 'finances.dart';
-import 'focus.dart';
+
 import 'bottom_nav_bar.dart';
 
 class HealthPage extends StatefulWidget {
@@ -43,10 +43,6 @@ class _HealthPageState extends State<HealthPage> {
         );
         break;
       case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FocusPage()),
-        );
         break;
     }
   }
