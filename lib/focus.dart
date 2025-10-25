@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home.dart';
-import 'life.dart';
+import 'tools.dart';
 import 'health.dart';
 import 'finances.dart';
 import 'bottom_nav_bar.dart';
@@ -28,7 +28,7 @@ class _FocusPageState extends State<FocusPage> {
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => LifePage()),
+          MaterialPageRoute(builder: (context) => ToolsPage()),
         );
         break;
       case 2:

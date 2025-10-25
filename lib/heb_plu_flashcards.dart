@@ -98,10 +98,13 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
   String? _feedback;
 
   void _checkAnswer() {
-    final userInput = _controller.text.trim();
-    final correctPlu = _flashcards[_currentIndex]['plu'];
-    final currentCard = _flashcards[_currentIndex];
-    if (userInput == correctPlu) {
+  String userInput = _controller.text.trim();
+  String correctPlu = (_flashcards[_currentIndex]['plu'] ?? '').trim();
+  final currentCard = _flashcards[_currentIndex];
+  // Remove leading zeros for comparison
+  userInput = userInput.replaceFirst(RegExp(r'^0+'), '');
+  correctPlu = correctPlu.replaceFirst(RegExp(r'^0+'), '');
+  if (userInput == correctPlu) {
       setState(() {
         _feedback = null;
         // only count correct if no hint was used
@@ -304,10 +307,18 @@ class _HebPluFlashcardsPageState extends State<HebPluFlashcardsPage> {
                         if (_hintLength > 0)
                           Padding(
                             padding: const EdgeInsets.only(top: 12.0, bottom: 4.0),
-                            child: Text(
-                              'Hint: ${card["plu"]!.substring(0, _hintLength)}',
-                              style: const TextStyle(fontSize: 20, color: Colors.blue),
-                            ),
+                            child: Builder(builder: (context) {
+                              // Defensive: ensure PLU is a non-null string before using length/substring
+                              final pluRaw = card['plu'];
+                              final plu = pluRaw == null ? '' : pluRaw;
+                              final int maxLen = plu.length;
+                              final int take = _hintLength <= 0 ? 0 : (_hintLength > maxLen ? maxLen : _hintLength);
+                              final hint = take > 0 ? plu.substring(0, take) : '';
+                              return Text(
+                                'Hint: $hint',
+                                style: const TextStyle(fontSize: 20, color: Colors.blue),
+                              );
+                            }),
                           ),
                         const SizedBox(height: 24),
                         TextField(

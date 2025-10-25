@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import 'profile.dart';
-import 'life.dart';
+import 'tools.dart';
 import 'health.dart';
 import 'finances.dart';
 import 'focus.dart';
@@ -160,7 +160,7 @@ class _HomePageState extends State<HomePage> {
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => LifePage()),
+    MaterialPageRoute(builder: (context) => ToolsPage()),
         );
         break;
       case 2:

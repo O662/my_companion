@@ -6,9 +6,9 @@ Anjou Pear,4416
 Apricots,4218
 Artichoke,4084
 Asian Pear,4408
-Asparagas,4080
+Asparagus,4080
 Ataulfo Mangos,4312
-Baby Bokchoy,4544
+Baby Bok Choy,4544
 Banana Peppers,4721
 Bananas,4011
 Bartlett Pear,4409
@@ -16,8 +16,8 @@ Beefsteak Tomatoes,3151
 Beets with Top,4539
 Black Plums,4040
 Black Seedless Grapes,4638
-Bokchoy,4545
-Bollios,34990
+Bok Choy,4545
+Bolillos,34990
 Bosc Pear,4412
 Broccoli,4548
 Brussel Sprouts,4550
@@ -60,16 +60,18 @@ Green Leaf Lettuce,4076
 Green Onions,4068
 Guava,4299
 Habanero Peppers,3125
+Heirloom Tomatoes,3423
 Honeycrisp Apples,3283
 Honeydew Melon,4034
-Iceburg Lettuce,4061
+Hot Hatch Peppers,6960
+Iceberg Lettuce,4061
 Italian Parsley,4901
 Jackfruit,3454
-Jalapenos,4693
-Jumbo Avacado,4770
+Jalapeno Peppers,4693
+Jumbo Avocado,4770
 Kale,4627
 Kiwi,4030
-Large Avacado,4225
+Large Avocado,4225
 Large Grapefruit,4495
 Large Lemons,4053
 Large Mangos,4959
@@ -80,6 +82,7 @@ Lemons,4958
 Limes,4048
 Macintosh Apples,4152
 Medium Pumpkin,4736
+Mild Hatch Peppers,6958
 Mustard Greens,4620
 Nectarines,4036
 Orange Bell Peppers,4682
@@ -90,6 +93,7 @@ Pecans,4936
 Personal Pineapple,4029
 Personal Watermelon,3421
 Pineapple,4433
+Plantains,3287
 Plumcot,3278
 Poblano Peppers,4705
 Pomegranates,4445
@@ -98,7 +102,7 @@ Purple Potatoes,3128
 Red Bell Peppers,4088
 Red Cabbage,4554
 Red Delicious Apples,4016
-Red Jalapenos,4694
+Red Jalapeno Peppers,4694
 Red Leaf Lettuce,4075
 Red Onions,4082
 Red Pear,4410
@@ -109,10 +113,12 @@ Red Seedless Grapes,4023
 Roma Tomatoes,4087
 Romaine Lettuce,4640
 Russet Potatoes,4072
+Seeded Watermelon,4344
+Seedless Watermelon,4032
 Serrano Peppers,4709
 Shallots,4662
 Shitake Mushrooms,4651
-Small Avacado,4046
+Small Avocado,4046
 Small Grapefruit,4027
 Small Lemons,4033
 Small Mangos,4051
@@ -126,10 +132,8 @@ Sweet Potatoes,4816
 Tangerines,4449
 Tomatillos,4801
 Tomatoes on the Vine,4664
-Tumeric,3194
+Turmeric,3194
 Walnuts,4943
-"Watermelon, Seeded",4344
-"Watermelon, Seedless",4032
 White Flesh Peaches,4401
 White Mushrooms,4085
 White Mushrooms,4085
