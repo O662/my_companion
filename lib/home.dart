@@ -417,6 +417,7 @@ class _HomePageState extends State<HomePage> {
         final isDaytime = period['isDaytime'] as bool?;
         final temp = period['temperature'];
         final unit = period['temperatureUnit'];
+        final icon = period['icon'] as String?;
         
         if (name != null && temp != null && unit != null) {
           // Skip today's entries completely
@@ -438,6 +439,10 @@ class _HomePageState extends State<HomePage> {
           
           if (isDaytime == true) {
             dayMap[dayName]!['high'] = '$temp°';
+            // Store icon for daytime (primary icon)
+            if (icon != null) {
+              dayMap[dayName]!['icon'] = icon;
+            }
           } else {
             dayMap[dayName]!['low'] = '$temp°';
           }
@@ -453,6 +458,7 @@ class _HomePageState extends State<HomePage> {
           'day': entry.key,
           'high': entry.value['high'] ?? '--',
           'low': entry.value['low'] ?? '--',
+          'icon': entry.value['icon'] ?? '',
         });
         count++;
       }
@@ -618,7 +624,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 8),
               Center(
                 child: SizedBox(
-                  height: 130,
+                  height: 160,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -652,6 +658,16 @@ class _HomePageState extends State<HomePage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 6),
+                          if (day['icon'] != null && day['icon']!.isNotEmpty)
+                            Image.network(
+                              day['icon']!,
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.wb_sunny, size: 30, color: Colors.orange);
+                              },
+                            ),
                           const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
