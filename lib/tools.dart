@@ -16,20 +16,17 @@ class _ToolsPageState extends State<ToolsPage> {
   int _selectedIndex = 1;
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // Don't navigate if we're already on this page
+    if (index == 1) {
+      return; // Already on tools page
+    }
+    
+    // Navigate to other pages
     switch (index) {
       case 0:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
-        );
-        break;
-      case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ToolsPage()),
         );
         break;
       case 2:

@@ -21,13 +21,12 @@ class _HealthPageState extends State<HealthPage> {
   double get _progressPercentage => (_currentSteps / _goalSteps).clamp(0.0, 1.0);
 
   void _onItemTapped(int index) {
-    if (_selectedIndex == index) {
-      return; // Already on this page, don't navigate
+    // Don't navigate if we're already on this page
+    if (index == 2) {
+      return; // Already on health page
     }
     
-    setState(() {
-      _selectedIndex = index;
-    });
+    // Navigate to other pages
     switch (index) {
       case 0:
         Navigator.pushReplacement(
@@ -39,13 +38,6 @@ class _HealthPageState extends State<HealthPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => ToolsPage()),
-        );
-        break;
-      case 2:
-        // This case shouldn't be reached now due to the check above
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HealthPage()),
         );
         break;
       case 3:

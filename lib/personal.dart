@@ -114,9 +114,12 @@ class _PersonalPageState extends State<PersonalPage> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // Don't navigate if we're already on this page
+    if (index == 3) {
+      return; // Already on personal page
+    }
+    
+    // Navigate to other pages
     switch (index) {
       case 0:
         Navigator.pushReplacement(
@@ -134,12 +137,6 @@ class _PersonalPageState extends State<PersonalPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HealthPage()),
-        );
-        break;
-      case 3:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => PersonalPage()),
         );
         break;
     }

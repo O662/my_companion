@@ -21,6 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _locationString = '';
+  String _coordinates = '';
   String _currentTemp = '';
   String _feelsLikeTemp = '';
   String _highTemp = '';
@@ -47,16 +48,16 @@ class _HomePageState extends State<HomePage> {
     final dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     final monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     
-    setState(() {
-      _dayOfWeek = dayNames[now.weekday - 1];
-      _dateString = '${monthNames[now.month - 1]} ${now.day}, ${now.year}';
-    });
+    // No setState needed in initState - set directly
+    _dayOfWeek = dayNames[now.weekday - 1];
+    _dateString = '${monthNames[now.month - 1]} ${now.day}, ${now.year}';
   }
 
   Future<void> _fetchUserInfo() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (!mounted) return;
       setState(() {
         _firstName = userDoc['first_name'];
         _setGreeting();
@@ -79,6 +80,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _getLocationAndWeather() async {
+    // Early return if widget is already disposed
+    if (!mounted) return;
+    
     try {
       bool serviceEnabled;
       LocationPermission permission;
@@ -92,6 +96,7 @@ class _HomePageState extends State<HomePage> {
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
           if (permission == LocationPermission.denied) {
+            if (!mounted) return;
             setState(() {
               _currentTemp = 'Please allow location access in your browser.';
             });
@@ -99,6 +104,7 @@ class _HomePageState extends State<HomePage> {
           }
         }
         if (permission == LocationPermission.deniedForever) {
+          if (!mounted) return;
           setState(() {
             _currentTemp = 'Location access blocked. Check browser settings.';
           });
@@ -108,6 +114,7 @@ class _HomePageState extends State<HomePage> {
         // For mobile platforms
         serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
+          if (!mounted) return;
           setState(() {
             _currentTemp = 'Location services are disabled.';
           });
@@ -118,6 +125,7 @@ class _HomePageState extends State<HomePage> {
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
           if (permission == LocationPermission.denied) {
+            if (!mounted) return;
             setState(() {
               _currentTemp = 'Location permissions are denied.';
             });
@@ -125,6 +133,7 @@ class _HomePageState extends State<HomePage> {
           }
         }
         if (permission == LocationPermission.deniedForever) {
+          if (!mounted) return;
           setState(() {
             _currentTemp = 'Location permissions are permanently denied.';
           });
@@ -143,35 +152,159 @@ class _HomePageState extends State<HomePage> {
       },
     );
     
+    // Check if widget is still mounted after async operation
+    if (!mounted) return;
+    
     print('Got position: ${position.latitude}, ${position.longitude}');
     double lat = position.latitude;
     double lon = position.longitude;
 
     // Get placemark (city/state) from coordinates
     print('Getting placemark...');
+    if (!mounted) return;
+    setState(() {
+      _coordinates = '$lat, $lon';
+    });
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        print('Location: ${place.locality}, ${place.administrativeArea}');
-        setState(() {
-          _locationString = '${place.locality ?? 'Unknown'}, ${place.administrativeArea ?? ''}';
-        });
+      // Use Nominatim reverse geocoding API that works on all platforms
+      final geocodeUrl = Uri.parse('https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json');
+      final geocodeResp = await http.get(geocodeUrl, headers: {
+        'User-Agent': 'MyCompanionApp (your@email.com)'
+      });
+      
+      if (geocodeResp.statusCode == 200 && mounted) {
+        final geocodeData = json.decode(geocodeResp.body);
+        final address = geocodeData['address'];
+        
+        if (address != null) {
+          String locationName = '';
+          String prefix = '';
+          
+          // Try to get city/town
+          if (address['city'] != null && address['city'].toString().isNotEmpty) {
+            locationName = address['city'];
+          } else if (address['town'] != null && address['town'].toString().isNotEmpty) {
+            locationName = address['town'];
+          } else if (address['village'] != null && address['village'].toString().isNotEmpty) {
+            locationName = address['village'];
+          } else if (address['suburb'] != null && address['suburb'].toString().isNotEmpty) {
+            locationName = address['suburb'];
+            prefix = 'near ';
+          } else if (address['county'] != null && address['county'].toString().isNotEmpty) {
+            locationName = address['county'];
+            prefix = 'near ';
+          } else if (address['state'] != null && address['state'].toString().isNotEmpty) {
+            locationName = address['state'];
+            prefix = 'near ';
+          }
+          
+          // Add state if available and different from location name
+          String fullLocation = locationName;
+          if (address['state'] != null && 
+              address['state'].toString().isNotEmpty && 
+              address['state'] != locationName) {
+            fullLocation = '$locationName, ${address['state']}';
+          }
+          
+          if (mounted) {
+            setState(() {
+              _locationString = fullLocation.isNotEmpty ? '$prefix$fullLocation' : 'Location unavailable';
+            });
+          }
+        } else if (mounted) {
+          setState(() {
+            _locationString = 'Location unavailable';
+          });
+        }
+      } else {
+        // Fallback to native geocoding for non-web platforms
+        if (!kIsWeb) {
+          List<Placemark>? placemarks = await placemarkFromCoordinates(lat, lon);
+          print('Placemarks received: ${placemarks?.length ?? 0}');
+          if (placemarks != null && placemarks.isNotEmpty) {
+            final place = placemarks.first;
+            print('Placemark data - locality: ${place.locality}, subLocality: ${place.subLocality}, subAdmin: ${place.subAdministrativeArea}, admin: ${place.administrativeArea}, country: ${place.country}');
+            
+            // Build location string with fallbacks
+            String locationName = '';
+            String prefix = '';
+            
+            if (place.locality != null && place.locality!.isNotEmpty) {
+              // We have a city name - this is exact
+              locationName = place.locality!;
+            } else if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+              // We have a sub-locality (neighborhood/district) - use with "near"
+              locationName = place.subLocality!;
+              prefix = 'near ';
+            } else if (place.subAdministrativeArea != null && place.subAdministrativeArea!.isNotEmpty) {
+              // We have a county - use with "near"
+              locationName = place.subAdministrativeArea!;
+              prefix = 'near ';
+            } else if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
+              // We only have state - use with "near"
+              locationName = place.administrativeArea!;
+              prefix = 'near ';
+            } else if (place.country != null && place.country!.isNotEmpty) {
+              // Last resort - country name
+              locationName = place.country!;
+              prefix = 'near ';
+            }
+            
+            // If still empty, use a fallback
+            if (locationName.isEmpty) {
+              if (!mounted) return;
+              setState(() {
+                _locationString = 'Location unavailable';
+              });
+              return;
+            }
+            
+            // Add state/province if available and different from location name
+            String fullLocation = locationName;
+            if (place.administrativeArea != null && 
+                place.administrativeArea!.isNotEmpty && 
+                place.administrativeArea != locationName) {
+              fullLocation = '$locationName, ${place.administrativeArea}';
+            }
+            
+            if (!mounted) return;
+            setState(() {
+              _locationString = '$prefix$fullLocation';
+            });
+          } else {
+            print('No placemarks returned from geocoding');
+            if (!mounted) return;
+            setState(() {
+              _locationString = 'Location unavailable';
+            });
+          }
+        } else if (mounted) {
+          // If native geocoding also fails
+          setState(() {
+            _locationString = 'Location unavailable';
+          });
+        }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Geocoding error: $e');
+      print('Stack trace: $stackTrace');
+      // If geocoding fails, show coordinate-based location
+      if (!mounted) return;
       setState(() {
-        _locationString = 'Location: $lat, $lon';
+        _locationString = 'Lat: ${lat.toStringAsFixed(2)}, Lon: ${lon.toStringAsFixed(2)}';
       });
     }
 
     // Get NWS gridpoint for location
     print('Fetching weather data...');
+    if (!mounted) return;
+    
     final pointsUrl = Uri.parse('https://api.weather.gov/points/$lat,$lon');
     final pointsResp = await http.get(pointsUrl, headers: {
       'User-Agent': 'MyCompanionApp (your@email.com)'
     });
     
+    if (!mounted) return;
     print('Points API response: ${pointsResp.statusCode}');
     if (pointsResp.statusCode == 200) {
       final pointsData = json.decode(pointsResp.body);
@@ -179,6 +312,7 @@ class _HomePageState extends State<HomePage> {
       
       if (properties == null) {
         print('Properties is null');
+        if (!mounted) return;
         setState(() {
           _currentTemp = 'Weather data unavailable.';
         });
@@ -191,6 +325,7 @@ class _HomePageState extends State<HomePage> {
       
       if (gridId == null || gridX == null || gridY == null) {
         print('Grid data is null: gridId=$gridId, gridX=$gridX, gridY=$gridY');
+        if (!mounted) return;
         setState(() {
           _currentTemp = 'Weather unavailable for this location.';
         });
@@ -200,11 +335,14 @@ class _HomePageState extends State<HomePage> {
       print('Grid: $gridId $gridX,$gridY');
       
       // Get observation stations for this gridpoint
+      if (!mounted) return;
+      
       final stationsUrl = Uri.parse('https://api.weather.gov/gridpoints/$gridId/$gridX,$gridY/stations');
       final stationsResp = await http.get(stationsUrl, headers: {
         'User-Agent': 'MyCompanionApp (your@email.com)'
       });
       
+      if (!mounted) return;
       print('Stations API response: ${stationsResp.statusCode}');
       if (stationsResp.statusCode == 200) {
         final stationsData = json.decode(stationsResp.body);
@@ -216,11 +354,14 @@ class _HomePageState extends State<HomePage> {
           print('Nearest station: $nearestStation');
           
           // Get latest observation from the nearest station
+          if (!mounted) return;
+          
           final observationUrl = Uri.parse('https://api.weather.gov/stations/$nearestStation/observations/latest');
           final observationResp = await http.get(observationUrl, headers: {
             'User-Agent': 'MyCompanionApp (your@email.com)'
           });
           
+          if (!mounted) return;
           print('Observation API response: ${observationResp.statusCode}');
           if (observationResp.statusCode == 200) {
             final observationData = json.decode(observationResp.body);
@@ -249,6 +390,7 @@ class _HomePageState extends State<HomePage> {
                   print('Wind Chill: $windChillF°F');
                 }
                 
+                if (!mounted) return;
                 setState(() {
                   _currentTemp = '$tempF°F';
                   _feelsLikeTemp = feelsLike;
@@ -272,18 +414,21 @@ class _HomePageState extends State<HomePage> {
           }
         } else {
           print('No stations found');
+          if (!mounted) return;
           setState(() {
             _currentTemp = 'No weather stations nearby.';
           });
         }
       } else {
         print('Stations API error: ${stationsResp.body}');
+        if (!mounted) return;
         setState(() {
           _currentTemp = 'Failed to find weather stations.';
         });
       }
     } else {
       print('Points API error: ${pointsResp.body}');
+      if (!mounted) return;
       setState(() {
         _currentTemp = 'Weather unavailable for this location.';
       });
@@ -291,6 +436,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e, stackTrace) {
       print('Error getting location/weather: $e');
       print('Stack trace: $stackTrace');
+      if (!mounted) return;
       setState(() {
         if (e.toString().contains('timed out') || e.toString().contains('TimeoutException')) {
           _currentTemp = 'Location request timed out.';
@@ -304,6 +450,8 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _getHourlyForecastAsFallback(String gridId, int gridX, int gridY) async {
+    if (!mounted) return;
+    
     try {
       print('Using hourly forecast temperature as fallback...');
       final hourlyUrl = Uri.parse('https://api.weather.gov/gridpoints/$gridId/$gridX,$gridY/forecast/hourly');
@@ -311,6 +459,7 @@ class _HomePageState extends State<HomePage> {
         'User-Agent': 'MyCompanionApp (your@email.com)'
       });
       
+      if (!mounted) return;
       if (hourlyResp.statusCode == 200) {
         final hourlyData = json.decode(hourlyResp.body);
         final properties = hourlyData['properties'];
@@ -324,12 +473,14 @@ class _HomePageState extends State<HomePage> {
             
             if (temp != null && unit != null) {
               print('Hourly Forecast Temperature: $temp°$unit');
+              if (!mounted) return;
               setState(() {
                 _currentTemp = '$temp°$unit';
                 _feelsLikeTemp = '';
                 _isUsingFallbackTemp = true;
               });
             } else {
+              if (!mounted) return;
               setState(() {
                 _currentTemp = 'Temperature unavailable.';
               });
@@ -342,6 +493,7 @@ class _HomePageState extends State<HomePage> {
       _getTodayHighLow(gridId, gridX, gridY);
     } catch (e) {
       print('Error getting hourly forecast temperature: $e');
+      if (!mounted) return;
       setState(() {
         _currentTemp = 'Temperature unavailable.';
       });
@@ -349,6 +501,8 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _getTodayHighLow(String gridId, int gridX, int gridY) async {
+    if (!mounted) return;
+    
     try {
       print('Fetching today\'s high/low...');
       final forecastUrl = Uri.parse('https://api.weather.gov/gridpoints/$gridId/$gridX,$gridY/forecast');
@@ -356,6 +510,7 @@ class _HomePageState extends State<HomePage> {
         'User-Agent': 'MyCompanionApp (your@email.com)'
       });
       
+      if (!mounted) return;
       if (forecastResp.statusCode == 200) {
         final forecastData = json.decode(forecastResp.body);
         final properties = forecastData['properties'];
@@ -385,6 +540,7 @@ class _HomePageState extends State<HomePage> {
               if (high != null && low != null) break;
             }
             
+            if (!mounted) return;
             setState(() {
               _highTemp = high ?? '--';
               _lowTemp = low ?? '--';
@@ -401,7 +557,23 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  String _getWeatherEmoji(String condition) {
+    final lower = condition.toLowerCase();
+    if (lower.contains('sunny') || lower.contains('clear')) return '☀️';
+    if (lower.contains('partly cloudy') || lower.contains('partly sunny')) return '⛅';
+    if (lower.contains('mostly cloudy') || lower.contains('cloudy')) return '☁️';
+    if (lower.contains('rain') || lower.contains('shower')) return '🌧️';
+    if (lower.contains('storm') || lower.contains('thunder')) return '⛈️';
+    if (lower.contains('snow')) return '❄️';
+    if (lower.contains('fog') || lower.contains('mist')) return '🌫️';
+    if (lower.contains('wind')) return '💨';
+    if (lower.contains('hot')) return '🔥';
+    return '🌤️'; // default
+  }
+
   void _getMultiDayForecast(List<dynamic> periods) {
+    if (!mounted) return;
+    
     try {
       print('Processing 5-day forecast...');
       List<Map<String, String>> forecast = [];
@@ -417,7 +589,7 @@ class _HomePageState extends State<HomePage> {
         final isDaytime = period['isDaytime'] as bool?;
         final temp = period['temperature'];
         final unit = period['temperatureUnit'];
-        final icon = period['icon'] as String?;
+        final shortForecast = period['shortForecast'] as String?;
         
         if (name != null && temp != null && unit != null) {
           // Skip today's entries completely
@@ -439,9 +611,9 @@ class _HomePageState extends State<HomePage> {
           
           if (isDaytime == true) {
             dayMap[dayName]!['high'] = '$temp°';
-            // Store icon for daytime (primary icon)
-            if (icon != null) {
-              dayMap[dayName]!['icon'] = icon;
+            // Store emoji for daytime condition
+            if (shortForecast != null) {
+              dayMap[dayName]!['emoji'] = _getWeatherEmoji(shortForecast);
             }
           } else {
             dayMap[dayName]!['low'] = '$temp°';
@@ -458,11 +630,12 @@ class _HomePageState extends State<HomePage> {
           'day': entry.key,
           'high': entry.value['high'] ?? '--',
           'low': entry.value['low'] ?? '--',
-          'icon': entry.value['icon'] ?? '',
+          'emoji': entry.value['emoji'] ?? '🌤️',
         });
         count++;
       }
       
+      if (!mounted) return;
       setState(() {
         _fiveDayForecast = forecast;
       });
@@ -473,20 +646,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // Don't navigate if we're already on the home page
+    if (index == 0) {
+      return; // Already on home page
+    }
+    
+    // Navigate to other pages
     switch (index) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-        );
-        break;
       case 1:
         Navigator.pushReplacement(
           context,
-    MaterialPageRoute(builder: (context) => ToolsPage()),
+          MaterialPageRoute(builder: (context) => ToolsPage()),
         );
         break;
       case 2:
@@ -590,7 +760,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ],
-                  if (_locationString.isNotEmpty) ...[
+                  if (_locationString.isNotEmpty || _coordinates.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     const Divider(),
                     const SizedBox(height: 8),
@@ -599,9 +769,20 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         const Icon(Icons.location_on, color: Colors.blue, size: 16),
                         const SizedBox(width: 4),
-                        Text(
-                          _locationString,
-                          style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_locationString.isNotEmpty)
+                              Text(
+                                'Location: $_locationString',
+                                style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color, fontWeight: FontWeight.w600),
+                              ),
+                            if (_coordinates.isNotEmpty)
+                              Text(
+                                'coordinates: $_coordinates',
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
+                              ),
+                          ],
                         ),
                       ],
                     ),
@@ -659,15 +840,10 @@ class _HomePageState extends State<HomePage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
-                          if (day['icon'] != null && day['icon']!.isNotEmpty)
-                            Image.network(
-                              day['icon']!,
-                              width: 40,
-                              height: 40,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.wb_sunny, size: 30, color: Colors.orange);
-                              },
-                            ),
+                          Text(
+                            day['emoji'] ?? '🌤️',
+                            style: const TextStyle(fontSize: 32),
+                          ),
                           const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
