@@ -21,6 +21,10 @@ class _HealthPageState extends State<HealthPage> {
   double get _progressPercentage => (_currentSteps / _goalSteps).clamp(0.0, 1.0);
 
   void _onItemTapped(int index) {
+    if (_selectedIndex == index) {
+      return; // Already on this page, don't navigate
+    }
+    
     setState(() {
       _selectedIndex = index;
     });
@@ -38,6 +42,7 @@ class _HealthPageState extends State<HealthPage> {
         );
         break;
       case 2:
+        // This case shouldn't be reached now due to the check above
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HealthPage()),
@@ -95,7 +100,7 @@ class _HealthPageState extends State<HealthPage> {
                           children: [
                             Text(
                               _currentSteps.toString(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 48,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
