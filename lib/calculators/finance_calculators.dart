@@ -1,22 +1,132 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
-class FinanceCalculatorsPage extends StatelessWidget {
+class FinanceCalculatorsPage extends StatefulWidget {
+  @override
+  _FinanceCalculatorsPageState createState() => _FinanceCalculatorsPageState();
+}
+
+class _FinanceCalculatorsPageState extends State<FinanceCalculatorsPage> {
+  String? _selectedCalculator;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Finance Calculators'),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SimpleInterestCalculator(),
-            SizedBox(height: 24),
-            CompoundInterestCalculator(),
-          ],
+      body: _selectedCalculator == null
+          ? _buildCalculatorList()
+          : _buildSelectedCalculator(),
+    );
+  }
+
+  Widget _buildCalculatorList() {
+    return ListView(
+      padding: EdgeInsets.all(16),
+      children: [
+        _CalculatorListItem(
+          title: 'Simple Interest Calculator',
+          icon: Icons.percent,
+          onTap: () {
+            setState(() {
+              _selectedCalculator = 'simple';
+            });
+          },
         ),
+        SizedBox(height: 12),
+        _CalculatorListItem(
+          title: 'Compound Interest Calculator',
+          icon: Icons.trending_up,
+          onTap: () {
+            setState(() {
+              _selectedCalculator = 'compound';
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedCalculator() {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          color: Colors.grey.shade200,
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    _selectedCalculator = null;
+                  });
+                },
+              ),
+              Text(
+                _getCalculatorTitle(),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: _getCalculatorWidget(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getCalculatorTitle() {
+    switch (_selectedCalculator) {
+      case 'simple':
+        return 'Simple Interest Calculator';
+      case 'compound':
+        return 'Compound Interest Calculator';
+      default:
+        return '';
+    }
+  }
+
+  Widget _getCalculatorWidget() {
+    switch (_selectedCalculator) {
+      case 'simple':
+        return SimpleInterestCalculator();
+      case 'compound':
+        return CompoundInterestCalculator();
+      default:
+        return SizedBox();
+    }
+  }
+}
+
+class _CalculatorListItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CalculatorListItem({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, size: 32, color: Colors.green),
+        title: Text(
+          title,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
       ),
     );
   }

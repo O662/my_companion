@@ -18,7 +18,6 @@ class CalculatorPage extends StatelessWidget {
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
-                final buttonWidth = (constraints.maxWidth - 32) / 2;
                 return Column(
                   children: [
                     Row(

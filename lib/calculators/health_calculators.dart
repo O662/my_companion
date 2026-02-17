@@ -1,23 +1,131 @@
 import 'package:flutter/material.dart';
 
-class HealthCalculatorsPage extends StatelessWidget {
+class HealthCalculatorsPage extends StatefulWidget {
+  @override
+  _HealthCalculatorsPageState createState() => _HealthCalculatorsPageState();
+}
+
+class _HealthCalculatorsPageState extends State<HealthCalculatorsPage> {
+  String? _selectedCalculator;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Health Calculators'),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            BMICalculator(),
-            SizedBox(height: 24),
-            CalorieCalculator(),
-            SizedBox(height: 24),
-            // Add more health calculators here
-          ],
+      body: _selectedCalculator == null
+          ? _buildCalculatorList()
+          : _buildSelectedCalculator(),
+    );
+  }
+
+  Widget _buildCalculatorList() {
+    return ListView(
+      padding: EdgeInsets.all(16),
+      children: [
+        _CalculatorListItem(
+          title: 'BMI Calculator',
+          icon: Icons.monitor_weight,
+          onTap: () {
+            setState(() {
+              _selectedCalculator = 'bmi';
+            });
+          },
         ),
+        SizedBox(height: 12),
+        _CalculatorListItem(
+          title: 'Daily Calorie Calculator',
+          icon: Icons.local_fire_department,
+          onTap: () {
+            setState(() {
+              _selectedCalculator = 'calorie';
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedCalculator() {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          color: Colors.grey.shade200,
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    _selectedCalculator = null;
+                  });
+                },
+              ),
+              Text(
+                _getCalculatorTitle(),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: _getCalculatorWidget(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getCalculatorTitle() {
+    switch (_selectedCalculator) {
+      case 'bmi':
+        return 'BMI Calculator';
+      case 'calorie':
+        return 'Daily Calorie Calculator';
+      default:
+        return '';
+    }
+  }
+
+  Widget _getCalculatorWidget() {
+    switch (_selectedCalculator) {
+      case 'bmi':
+        return BMICalculator();
+      case 'calorie':
+        return CalorieCalculator();
+      default:
+        return SizedBox();
+    }
+  }
+}
+
+class _CalculatorListItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CalculatorListItem({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, size: 32, color: Colors.red),
+        title: Text(
+          title,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
       ),
     );
   }

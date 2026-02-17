@@ -1,22 +1,118 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
-class AlgebraCalculatorsPage extends StatelessWidget {
+class AlgebraCalculatorsPage extends StatefulWidget {
+  @override
+  _AlgebraCalculatorsPageState createState() => _AlgebraCalculatorsPageState();
+}
+
+class _AlgebraCalculatorsPageState extends State<AlgebraCalculatorsPage> {
+  String? _selectedCalculator;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Algebra Calculators'),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            QuadraticCalculator(),
-            SizedBox(height: 24),
-            // Add more algebra calculators here
-          ],
+      body: _selectedCalculator == null
+          ? _buildCalculatorList()
+          : _buildSelectedCalculator(),
+    );
+  }
+
+  Widget _buildCalculatorList() {
+    return ListView(
+      padding: EdgeInsets.all(16),
+      children: [
+        _CalculatorListItem(
+          title: 'Quadratic Equation Solver',
+          icon: Icons.calculate,
+          onTap: () {
+            setState(() {
+              _selectedCalculator = 'quadratic';
+            });
+          },
         ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedCalculator() {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          color: Colors.grey.shade200,
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    _selectedCalculator = null;
+                  });
+                },
+              ),
+              Text(
+                _getCalculatorTitle(),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: _getCalculatorWidget(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getCalculatorTitle() {
+    switch (_selectedCalculator) {
+      case 'quadratic':
+        return 'Quadratic Equation Solver';
+      default:
+        return '';
+    }
+  }
+
+  Widget _getCalculatorWidget() {
+    switch (_selectedCalculator) {
+      case 'quadratic':
+        return QuadraticCalculator();
+      default:
+        return SizedBox();
+    }
+  }
+}
+
+class _CalculatorListItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CalculatorListItem({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, size: 32, color: Colors.blue),
+        title: Text(
+          title,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: onTap,
       ),
     );
   }
