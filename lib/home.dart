@@ -407,6 +407,10 @@ class _HomePageState extends State<HomePage> {
       List<Map<String, String>> forecast = [];
       Map<String, Map<String, String>> dayMap = {};
       
+      // Get today's day name
+      final dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      final today = dayNames[DateTime.now().weekday - 1];
+      
       for (int i = 0; i < periods.length && forecast.length < 5; i++) {
         final period = periods[i];
         final name = period['name'] as String?;
@@ -415,11 +419,18 @@ class _HomePageState extends State<HomePage> {
         final unit = period['temperatureUnit'];
         
         if (name != null && temp != null && unit != null) {
-          // Extract day name (e.g., "Monday" from "Monday Night")
-          String dayName = name.replaceAll(' Night', '').replaceAll('This Afternoon', 'Today');
+          // Skip today's entries completely
+          if (name == 'Tonight' || name == 'Today' || name == 'This Afternoon') {
+            continue;
+          }
           
-          // Skip if it's "Tonight" or "This Afternoon" - we already have today
-          if (dayName == 'Tonight' || dayName == 'This Afternoon') continue;
+          // Extract day name (e.g., "Monday" from "Monday Night")
+          String dayName = name.replaceAll(' Night', '');
+          
+          // Skip if this is today's day
+          if (dayName == today) {
+            continue;
+          }
           
           if (!dayMap.containsKey(dayName)) {
             dayMap[dayName] = {};
@@ -433,10 +444,9 @@ class _HomePageState extends State<HomePage> {
         }
       }
       
-      // Convert to list, skipping today
+      // Convert to list
       int count = 0;
       for (var entry in dayMap.entries) {
-        if (entry.key == 'Today') continue;
         if (count >= 5) break;
         
         forecast.add({
