@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'health.dart';
 import 'finances.dart';
+import 'calculators.dart';
 
 import 'bottom_nav_bar.dart';
 import 'flashcards.dart';
@@ -54,53 +55,55 @@ class _ToolsPageState extends State<ToolsPage> {
       appBar: AppBar(
         title: Text('Tools'),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final buttonWidth = (constraints.maxWidth - 48) / 2; // 16px buffer on each side and 16px between
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: buttonWidth,
-                    height: 150,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0xFFE3F2FD), // Very light blue at top
-                            Color(0xFF64B5F6), // Bottom is light blue
-                          ],
+      body: SingleChildScrollView( // Ensure the Column is scrollable
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Set the main axis size to min
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final buttonWidth = (constraints.maxWidth - 48) / 2; // 16px buffer on each side and 16px between
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: buttonWidth,
+                      height: 150,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFFE3F2FD), // Very light blue at top
+                              Color(0xFF64B5F6), // Bottom is light blue
+                            ],
+                          ),
                         ),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                        child: InkWell(
+                        child: Material(
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => FlashcardsPage()),
-                            );
-                          },
-                          child: const Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 16, bottom: 16),
-                              child: Text(
-                                'Flashcards',
-                                style: TextStyle(
-                                  color: Color(0xFF1976D2), // Darker blue
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(6),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => FlashcardsPage()),
+                              );
+                            },
+                            child: const Align(
+                              alignment: Alignment.bottomLeft,
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 16, bottom: 16),
+                                child: Text(
+                                  'Flashcards',
+                                  style: TextStyle(
+                                    color: Color(0xFF1976D2), // Darker blue
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -108,41 +111,44 @@ class _ToolsPageState extends State<ToolsPage> {
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: buttonWidth,
-                    height: 200,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0xFFE3F2FD), // Very light blue at top
-                            Color(0xFF64B5F6), // Bottom is light blue
-                          ],
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: buttonWidth,
+                      height: 200,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFFE3F2FD), // Very light blue at top
+                              Color(0xFF64B5F6), // Bottom is light blue
+                            ],
+                          ),
                         ),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                        child: InkWell(
+                        child: Material(
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
-                          onTap: () {
-                            // TODO: Implement calculators page navigation
-                          },
-                          child: const Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 16, bottom: 16),
-                              child: Text(
-                                'Calculators',
-                                style: TextStyle(
-                                  color: Color(0xFF1976D2), // Darker blue
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(6),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => CalculatorPage()),
+                              );
+                            },
+                            child: const Align(
+                              alignment: Alignment.bottomLeft,
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 16, bottom: 16),
+                                child: Text(
+                                  'Calculators',
+                                  style: TextStyle(
+                                    color: Color(0xFF1976D2), // Darker blue
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -150,13 +156,13 @@ class _ToolsPageState extends State<ToolsPage> {
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                ],
-              );
-            },
-          ),
-        ],
+                    const SizedBox(width: 16),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex,

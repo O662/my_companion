@@ -207,7 +207,6 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 32),
-            Text('Hi $_firstName! Welcome to the Home Page!'),
             const SizedBox(height: 16),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
