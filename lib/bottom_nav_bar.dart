@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../home.dart';
 import '../tools.dart';
 import '../health.dart';
-import '../finances.dart';
 
 
 class BottomNavBar extends StatelessWidget {
@@ -27,11 +26,7 @@ class BottomNavBar extends StatelessWidget {
           icon: Icon(Icons.health_and_safety),
           label: 'Health',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.attach_money),
-          label: 'Finance',
-        ),
-        // Removed Focus nav item
+        // Removed Finance nav item
       ],
       currentIndex: selectedIndex,
       selectedItemColor: const Color.fromARGB(255, 114, 7, 124),

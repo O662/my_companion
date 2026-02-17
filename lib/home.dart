@@ -6,7 +6,6 @@ import 'dart:io';
 import 'profile.dart';
 import 'tools.dart';
 import 'health.dart';
-import 'finances.dart';
 
 import 'bottom_nav_bar.dart';
 import 'package:http/http.dart' as http;
@@ -479,14 +478,6 @@ class _HomePageState extends State<HomePage> {
           MaterialPageRoute(builder: (context) => HealthPage()),
         );
         break;
-      case 3:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FinancesPage()),
-        );
-        break;
-      case 4:
-        break;
     }
   }
 
@@ -531,7 +522,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     Text(
                       _dateString,
-                      style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
                     const SizedBox(height: 12),
                     const Divider(),
@@ -543,7 +534,7 @@ class _HomePageState extends State<HomePage> {
                       const Icon(Icons.thermostat, color: Colors.blue),
                       const SizedBox(width: 8),
                       Text(
-                        _currentTemp.isEmpty ? 'Loading...' : _isUsingFallbackTemp ? '$_currentTemp*' : _currentTemp,
+                        _currentTemp.isEmpty ? 'Loading...' : _isUsingFallbackTemp ? '$_currentTemp *' : _currentTemp,
                         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -552,7 +543,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 4),
                     Text(
                       'Feels Like: $_feelsLikeTemp',
-                      style: const TextStyle(fontSize: 16, color: Colors.black54),
+                      style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodySmall?.color),
                     ),
                   ],
                   if (_highTemp.isNotEmpty && _lowTemp.isNotEmpty) ...[
@@ -587,7 +578,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(width: 4),
                         Text(
                           _locationString,
-                          style: const TextStyle(fontSize: 14, color: Colors.black87),
+                          style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color),
                         ),
                       ],
                     ),
@@ -623,7 +614,9 @@ class _HomePageState extends State<HomePage> {
                         margin: const EdgeInsets.symmetric(horizontal: 8),
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.blue.withOpacity(0.15) 
+                            : Colors.blue[50],
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.blue.shade300, width: 1.5),
                       ),

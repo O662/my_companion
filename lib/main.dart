@@ -1,35 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'home.dart';
 import 'starting_pages/welcome_page.dart';
 import 'firebase_options.dart';
 import 'profile.dart';
 import 'health.dart';
-import 'finances.dart';
+import 'theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'My Companion',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      debugShowCheckedModeBanner: false, // Add this line to remove the debug banner
-      home: AuthCheck(),
-      routes: {
-        '/profile': (context) => ProfilePage(), // Add the profile route
-        '/health': (context) => HealthPage(),
-        '/finance': (context) => FinancesPage(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'My Companion',
+          theme: themeProvider.lightTheme,
+          darkTheme: themeProvider.darkTheme,
+          themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          debugShowCheckedModeBanner: false,
+          home: AuthCheck(),
+          routes: {
+            '/profile': (context) => ProfilePage(),
+            '/health': (context) => HealthPage(),
+          },
+        );
       },
     );
   }
