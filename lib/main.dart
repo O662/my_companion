@@ -7,6 +7,7 @@ import 'starting_pages/welcome_page.dart';
 import 'firebase_options.dart';
 import 'profile.dart';
 import 'health.dart';
+import 'personal.dart';
 import 'theme_provider.dart';
 
 void main() async {
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
           routes: {
             '/profile': (context) => ProfilePage(),
             '/health': (context) => HealthPage(),
+            '/personal': (context) => PersonalPage(),
           },
         );
       },

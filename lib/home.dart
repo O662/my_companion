@@ -6,6 +6,7 @@ import 'dart:io';
 import 'profile.dart';
 import 'tools.dart';
 import 'health.dart';
+import 'personal.dart';
 
 import 'bottom_nav_bar.dart';
 import 'package:http/http.dart' as http;
@@ -476,6 +477,12 @@ class _HomePageState extends State<HomePage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HealthPage()),
+        );
+        break;
+      case 3:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => PersonalPage()),
         );
         break;
     }

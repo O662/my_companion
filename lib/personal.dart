@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'home.dart';
 import 'tools.dart';
-import 'personal.dart';
+import 'health.dart';
 
 import 'bottom_nav_bar.dart';
 
-class HealthPage extends StatefulWidget {
+class PersonalPage extends StatefulWidget {
   @override
-  _HealthPageState createState() => _HealthPageState();
+  _PersonalPageState createState() => _PersonalPageState();
 }
 
-class _HealthPageState extends State<HealthPage> {
-  int _selectedIndex = 2;
+class _PersonalPageState extends State<PersonalPage> {
+  int _selectedIndex = 3;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -49,10 +49,10 @@ class _HealthPageState extends State<HealthPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Health'),
+        title: Text('Personal'),
       ),
       body: Center(
-        child: Text('Welcome to the Health Page!'),
+        child: Text('Welcome to the Personal Page!'),
       ),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _selectedIndex,
