@@ -9,6 +9,8 @@ import 'allTools/flashcards.dart';
 import 'allTools/focus.dart';
 import 'allTools/Instacompare.dart';
 import 'allTools/weather.dart';
+import 'allTools/media.dart';
+import 'allTools/media.dart';
 
 class ToolsPage extends StatefulWidget {
   @override
@@ -275,6 +277,49 @@ class _ToolsPageState extends State<ToolsPage> {
                                 '⚖️ Insta Compare',
                                 style: TextStyle(
                                   color: Color(0xFFC2185B),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Media - Large
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFFF3E5F5),
+                            Color(0xFFBA68C8),
+                          ],
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => MediaPage()),
+                            );
+                          },
+                          child: const Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 16),
+                              child: Text(
+                                '🎥 Media',
+                                style: TextStyle(
+                                  color: Color(0xFF7B1FA2),
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
