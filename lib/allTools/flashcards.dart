@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'heb_plus.dart';
-import 'package:csv/csv.dart';
 
 class FlashcardsPage extends StatelessWidget {
   const FlashcardsPage({Key? key}) : super(key: key);
