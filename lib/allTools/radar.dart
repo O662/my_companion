@@ -31,7 +31,9 @@ class _RadarPageState extends State<RadarPage> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() => _isLoadingLocation = false);
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+        }
         return;
       }
 
@@ -39,21 +41,27 @@ class _RadarPageState extends State<RadarPage> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() => _isLoadingLocation = false);
+          if (mounted) {
+            setState(() => _isLoadingLocation = false);
+          }
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() => _isLoadingLocation = false);
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+        }
         return;
       }
 
       Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        _isLoadingLocation = false;
-      });
+      if (mounted) {
+        setState(() {
+          _currentLocation = LatLng(position.latitude, position.longitude);
+          _isLoadingLocation = false;
+        });
+      }
       // Move map to current location after a short delay to ensure map is rendered
       Future.delayed(Duration(milliseconds: 100), () {
         if (mounted) {
@@ -62,7 +70,9 @@ class _RadarPageState extends State<RadarPage> {
       });
     } catch (e) {
       print('Error getting location: $e');
-      setState(() => _isLoadingLocation = false);
+      if (mounted) {
+        setState(() => _isLoadingLocation = false);
+      }
     }
   }
 

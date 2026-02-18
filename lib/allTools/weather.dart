@@ -37,10 +37,12 @@ class _WeatherPageState extends State<WeatherPage> {
       // Get current location
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() {
-          _errorMessage = 'Location services are disabled.';
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Location services are disabled.';
+            _isLoading = false;
+          });
+        }
         return;
       }
 
@@ -48,19 +50,23 @@ class _WeatherPageState extends State<WeatherPage> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _errorMessage = 'Location permissions are denied.';
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Location permissions are denied.';
+              _isLoading = false;
+            });
+          }
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _errorMessage = 'Location permissions are permanently denied.';
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Location permissions are permanently denied.';
+            _isLoading = false;
+          });
+        }
         return;
       }
 
@@ -117,23 +123,29 @@ class _WeatherPageState extends State<WeatherPage> {
           print('Geocoding error: $e');
         }
         
-        setState(() {
-          _weatherData = data;
-          _location = locationName;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _weatherData = data;
+            _location = locationName;
+            _isLoading = false;
+          });
+        }
       } else {
-        setState(() {
-          _errorMessage = 'Failed to load weather data (Status: ${response.statusCode})';
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Failed to load weather data (Status: ${response.statusCode})';
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       print('Weather Error: $e');
-      setState(() {
-        _errorMessage = 'Error: ${e.toString()}';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error: ${e.toString()}';
+          _isLoading = false;
+        });
+      }
     }
   }
 
