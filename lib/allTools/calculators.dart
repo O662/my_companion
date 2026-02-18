@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'calculators/finance_calculators.dart';
-import 'calculators/algebra_calculators.dart';
-import 'calculators/geometry_calculators.dart';
-import 'calculators/units_calculators.dart';
-import 'calculators/health_calculators.dart';
+import '../calculators/finance_calculators.dart';
+import '../calculators/algebra_calculators.dart';
+import '../calculators/geometry_calculators.dart';
+import '../calculators/units_calculators.dart';
+import '../calculators/health_calculators.dart';
 
 class CalculatorPage extends StatelessWidget {
   @override

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'home.dart';
-import 'tools.dart';
-import 'health.dart';
-import 'finances.dart';
-import 'bottom_nav_bar.dart';
+import '../home.dart';
+import '../tools.dart';
+import '../health.dart';
+import '../finances.dart';
+import '../bottom_nav_bar.dart';
 
 class FocusPage extends StatefulWidget {
   @override

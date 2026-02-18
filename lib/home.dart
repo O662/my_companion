@@ -219,9 +219,9 @@ class _HomePageState extends State<HomePage> {
       } else {
         // Fallback to native geocoding for non-web platforms
         if (!kIsWeb) {
-          List<Placemark>? placemarks = await placemarkFromCoordinates(lat, lon);
-          print('Placemarks received: ${placemarks?.length ?? 0}');
-          if (placemarks != null && placemarks.isNotEmpty) {
+          List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+          print('Placemarks received: ${placemarks.length}');
+          if (placemarks.isNotEmpty) {
             final place = placemarks.first;
             print('Placemark data - locality: ${place.locality}, subLocality: ${place.subLocality}, subAdmin: ${place.subAdministrativeArea}, admin: ${place.administrativeArea}, country: ${place.country}');
             

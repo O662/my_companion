@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'health.dart';
 import 'personal.dart';
-import 'calculators.dart';
+import 'tools/calculators.dart';
 
 import 'bottom_nav_bar.dart';
-import 'flashcards.dart';
+import 'allTools/flashcards.dart';
 
 class ToolsPage extends StatefulWidget {
   @override
