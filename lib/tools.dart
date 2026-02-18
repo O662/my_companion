@@ -11,6 +11,7 @@ import 'allTools/Instacompare.dart';
 import 'allTools/weather.dart';
 import 'allTools/media.dart';
 import 'allTools/media.dart';
+import 'allTools/view_json.dart';
 
 class ToolsPage extends StatefulWidget {
   @override
@@ -184,6 +185,49 @@ class _ToolsPageState extends State<ToolsPage> {
                                 '🌤️ Weather',
                                 style: TextStyle(
                                   color: Color(0xFF00838F),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // View JSON - Large
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFFFFF9C4),
+                            Color(0xFFFFD54F),
+                          ],
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ViewJsonPage()),
+                            );
+                          },
+                          child: const Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 16),
+                              child: Text(
+                                '📄 View JSON',
+                                style: TextStyle(
+                                  color: Color(0xFFF57F17),
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
