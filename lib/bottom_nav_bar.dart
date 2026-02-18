@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import '../home.dart';
-import '../tools.dart';
-import '../health.dart';
-import '../personal.dart';
 
 
 class BottomNavBar extends StatelessWidget {
