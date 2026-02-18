@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'home.dart';
 import 'starting_pages/welcome_page.dart';
+import 'starting_pages/loading_screen.dart';
 import 'firebase_options.dart';
 import 'profile.dart';
 import 'health.dart';
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
           darkTheme: themeProvider.darkTheme,
           themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           debugShowCheckedModeBanner: false,
-          home: AuthCheck(),
+          home: LoadingScreen(nextScreen: AuthCheck()),
           routes: {
             '/profile': (context) => ProfilePage(),
             '/health': (context) => HealthPage(),
