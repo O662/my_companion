@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../home.dart';
 import '../tools.dart';
 import '../health.dart';
-import '../finances.dart';
+import '../personal.dart';
 import '../bottom_nav_bar.dart';
 
 class FocusPage extends StatefulWidget {
@@ -11,23 +11,22 @@ class FocusPage extends StatefulWidget {
 }
 
 class _FocusPageState extends State<FocusPage> {
-  int _selectedIndex = 4;
+  int _selectedIndex = 1;
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ToolsPage()),
+      );
+      return;
+    }
+    
     switch (index) {
       case 0:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
-        );
-        break;
-      case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ToolsPage()),
         );
         break;
       case 2:
@@ -39,13 +38,7 @@ class _FocusPageState extends State<FocusPage> {
       case 3:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => FinancesPage()),
-        );
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FocusPage()),
+          MaterialPageRoute(builder: (context) => PersonalPage()),
         );
         break;
     }
