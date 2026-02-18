@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'health.dart';
 import 'personal.dart';
-import 'tools/calculators.dart';
+import 'allTools/calculators.dart';
 
 import 'bottom_nav_bar.dart';
 import 'allTools/flashcards.dart';
