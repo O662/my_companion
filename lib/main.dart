@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +17,22 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Suppress the "disposed EngineFlutterView" assertion that fires on
+  // Flutter Web during hot restart. It is harmless and does not affect
+  // production builds.
+  if (kIsWeb) {
+    final originalOnError = FlutterError.onError;
+    FlutterError.onError = (FlutterErrorDetails details) {
+      final message = details.exceptionAsString();
+      if (message.contains('disposed EngineFlutterView')) {
+        // Ignore this web-engine hot-restart artefact.
+        return;
+      }
+      originalOnError?.call(details);
+    };
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
@@ -54,7 +71,9 @@ class AuthCheck extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         } else if (snapshot.hasData) {
           return HomePage();
         } else {

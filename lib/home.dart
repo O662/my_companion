@@ -65,6 +65,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  @override
+  void dispose() {
+    // Clean up resources
+    super.dispose();
+  }
+
   void _setGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) {
@@ -172,7 +178,9 @@ class _HomePageState extends State<HomePage> {
         'User-Agent': 'MyCompanionApp (your@email.com)'
       });
       
-      if (geocodeResp.statusCode == 200 && mounted) {
+      if (!mounted) return;
+      
+      if (geocodeResp.statusCode == 200) {
         final geocodeData = json.decode(geocodeResp.body);
         final address = geocodeData['address'];
         
@@ -220,6 +228,7 @@ class _HomePageState extends State<HomePage> {
         // Fallback to native geocoding for non-web platforms
         if (!kIsWeb) {
           List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+          if (!mounted) return;
           print('Placemarks received: ${placemarks.length}');
           if (placemarks.isNotEmpty) {
             final place = placemarks.first;
@@ -305,6 +314,7 @@ class _HomePageState extends State<HomePage> {
     });
     
     if (!mounted) return;
+    
     print('Points API response: ${pointsResp.statusCode}');
     if (pointsResp.statusCode == 200) {
       final pointsData = json.decode(pointsResp.body);
@@ -343,6 +353,7 @@ class _HomePageState extends State<HomePage> {
       });
       
       if (!mounted) return;
+      
       print('Stations API response: ${stationsResp.statusCode}');
       if (stationsResp.statusCode == 200) {
         final stationsData = json.decode(stationsResp.body);
@@ -362,6 +373,7 @@ class _HomePageState extends State<HomePage> {
           });
           
           if (!mounted) return;
+          
           print('Observation API response: ${observationResp.statusCode}');
           if (observationResp.statusCode == 200) {
             final observationData = json.decode(observationResp.body);
@@ -460,6 +472,7 @@ class _HomePageState extends State<HomePage> {
       });
       
       if (!mounted) return;
+      
       if (hourlyResp.statusCode == 200) {
         final hourlyData = json.decode(hourlyResp.body);
         final properties = hourlyData['properties'];
@@ -511,6 +524,7 @@ class _HomePageState extends State<HomePage> {
       });
       
       if (!mounted) return;
+      
       if (forecastResp.statusCode == 200) {
         final forecastData = json.decode(forecastResp.body);
         final properties = forecastData['properties'];
@@ -557,18 +571,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  String _getWeatherEmoji(String condition) {
+  IconData _getWeatherIconData(String condition) {
     final lower = condition.toLowerCase();
-    if (lower.contains('sunny') || lower.contains('clear')) return '☀️';
-    if (lower.contains('partly cloudy') || lower.contains('partly sunny')) return '⛅';
-    if (lower.contains('mostly cloudy') || lower.contains('cloudy')) return '☁️';
-    if (lower.contains('rain') || lower.contains('shower')) return '🌧️';
-    if (lower.contains('storm') || lower.contains('thunder')) return '⛈️';
-    if (lower.contains('snow')) return '❄️';
-    if (lower.contains('fog') || lower.contains('mist')) return '🌫️';
-    if (lower.contains('wind')) return '💨';
-    if (lower.contains('hot')) return '🔥';
-    return '🌤️'; // default
+    if (lower.contains('sunny') || lower.contains('clear')) return Icons.wb_sunny;
+    if (lower.contains('partly cloudy') || lower.contains('partly sunny')) return Icons.wb_cloudy;
+    if (lower.contains('mostly cloudy') || lower.contains('cloudy')) return Icons.cloud;
+    if (lower.contains('rain') || lower.contains('shower')) return Icons.water_drop;
+    if (lower.contains('storm') || lower.contains('thunder')) return Icons.thunderstorm;
+    if (lower.contains('snow')) return Icons.ac_unit;
+    if (lower.contains('fog') || lower.contains('mist')) return Icons.foggy;
+    if (lower.contains('wind')) return Icons.air;
+    if (lower.contains('hot')) return Icons.local_fire_department;
+    return Icons.wb_sunny; // default
+  }
+
+  Color _getWeatherIconColor(String condition) {
+    final lower = condition.toLowerCase();
+    if (lower.contains('sunny') || lower.contains('clear')) return Colors.orange;
+    if (lower.contains('cloudy') || lower.contains('partly sunny')) return Colors.blueGrey;
+    if (lower.contains('rain') || lower.contains('shower')) return Colors.blue;
+    if (lower.contains('storm') || lower.contains('thunder')) return Colors.deepPurple;
+    if (lower.contains('snow')) return Colors.lightBlue;
+    if (lower.contains('fog') || lower.contains('mist')) return Colors.grey;
+    if (lower.contains('wind')) return Colors.teal;
+    if (lower.contains('hot')) return Colors.red;
+    return Colors.orange; // default
   }
 
   void _getMultiDayForecast(List<dynamic> periods) {
@@ -611,9 +638,9 @@ class _HomePageState extends State<HomePage> {
           
           if (isDaytime == true) {
             dayMap[dayName]!['high'] = '$temp°';
-            // Store emoji for daytime condition
+            // Store condition for daytime
             if (shortForecast != null) {
-              dayMap[dayName]!['emoji'] = _getWeatherEmoji(shortForecast);
+              dayMap[dayName]!['condition'] = shortForecast;
             }
           } else {
             dayMap[dayName]!['low'] = '$temp°';
@@ -630,7 +657,7 @@ class _HomePageState extends State<HomePage> {
           'day': entry.key,
           'high': entry.value['high'] ?? '--',
           'low': entry.value['low'] ?? '--',
-          'emoji': entry.value['emoji'] ?? '🌤️',
+          'condition': entry.value['condition'] ?? 'Clear',
         });
         count++;
       }
@@ -840,9 +867,10 @@ class _HomePageState extends State<HomePage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
-                          Text(
-                            day['emoji'] ?? '🌤️',
-                            style: const TextStyle(fontSize: 32),
+                          Icon(
+                            _getWeatherIconData(day['condition'] ?? 'Clear'),
+                            size: 32,
+                            color: _getWeatherIconColor(day['condition'] ?? 'Clear'),
                           ),
                           const SizedBox(height: 6),
                           Row(

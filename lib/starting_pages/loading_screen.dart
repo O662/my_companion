@@ -20,9 +20,15 @@ class _LoadingScreenState extends State<LoadingScreen> {
     // Navigate to next screen after 1 second
     _timer = Timer(Duration(seconds: 1), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => widget.nextScreen),
-        );
+        // Use addPostFrameCallback to navigate after the current frame
+        // finishes, preventing "disposed EngineFlutterView" errors on web.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => widget.nextScreen),
+            );
+          }
+        });
       }
     });
   }

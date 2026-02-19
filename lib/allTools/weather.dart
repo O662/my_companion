@@ -27,6 +27,12 @@ class _WeatherPageState extends State<WeatherPage> {
     _getWeather();
   }
 
+  @override
+  void dispose() {
+    // Clean up resources
+    super.dispose();
+  }
+
   Future<void> _getWeather() async {
     setState(() {
       _isLoading = true;
@@ -149,18 +155,31 @@ class _WeatherPageState extends State<WeatherPage> {
     }
   }
 
-  String _getWeatherIcon(int? weatherCode) {
-    if (weatherCode == null) return '🌡️';
+  IconData _getWeatherIcon(int? weatherCode) {
+    if (weatherCode == null) return Icons.thermostat;
     // WMO Weather interpretation codes
-    if (weatherCode == 0) return '☀️'; // Clear sky
-    if (weatherCode <= 3) return '⛅'; // Partly cloudy
-    if (weatherCode <= 48) return '🌫️'; // Fog
-    if (weatherCode <= 67) return '🌧️'; // Rain
-    if (weatherCode <= 77) return '❄️'; // Snow
-    if (weatherCode <= 82) return '🌦️'; // Rain showers
-    if (weatherCode <= 86) return '🌨️'; // Snow showers
-    if (weatherCode >= 95) return '⛈️'; // Thunderstorm
-    return '🌡️';
+    if (weatherCode == 0) return Icons.wb_sunny; // Clear sky
+    if (weatherCode <= 3) return Icons.wb_cloudy; // Partly cloudy
+    if (weatherCode <= 48) return Icons.foggy; // Fog
+    if (weatherCode <= 67) return Icons.water_drop; // Rain
+    if (weatherCode <= 77) return Icons.ac_unit; // Snow
+    if (weatherCode <= 82) return Icons.grain; // Rain showers
+    if (weatherCode <= 86) return Icons.ac_unit; // Snow showers
+    if (weatherCode >= 95) return Icons.thunderstorm; // Thunderstorm
+    return Icons.thermostat;
+  }
+
+  Color _getWeatherIconColor(int? weatherCode) {
+    if (weatherCode == null) return Colors.grey;
+    if (weatherCode == 0) return Colors.orange;
+    if (weatherCode <= 3) return Colors.blueGrey;
+    if (weatherCode <= 48) return Colors.grey;
+    if (weatherCode <= 67) return Colors.blue;
+    if (weatherCode <= 77) return Colors.lightBlue;
+    if (weatherCode <= 82) return Colors.blue;
+    if (weatherCode <= 86) return Colors.lightBlue;
+    if (weatherCode >= 95) return Colors.deepPurple;
+    return Colors.grey;
   }
 
   String _getWeatherDescription(int? weatherCode) {
@@ -274,9 +293,10 @@ class _WeatherPageState extends State<WeatherPage> {
                               padding: EdgeInsets.all(24),
                               child: Column(
                                 children: [
-                                  Text(
+                                  Icon(
                                     _getWeatherIcon(_weatherData?['current']?['weather_code']),
-                                    style: TextStyle(fontSize: 80),
+                                    size: 80,
+                                    color: _getWeatherIconColor(_weatherData?['current']?['weather_code']),
                                   ),
                                   SizedBox(height: 16),
                                   Text(
@@ -314,28 +334,28 @@ class _WeatherPageState extends State<WeatherPage> {
                             crossAxisSpacing: 16,
                             childAspectRatio: 1.5,
                             children: [
-                              _buildWeatherDetail(
-                                '💨 Wind',
+                              _buildWeatherDetailWithIcon(
+                                Icons.air, 'Wind',
                                 '${_weatherData?['current']?['wind_speed_10m']?.round() ?? '--'} mph',
                               ),
-                              _buildWeatherDetail(
-                                '💧 Humidity',
+                              _buildWeatherDetailWithIcon(
+                                Icons.water_drop, 'Humidity',
                                 '${_weatherData?['current']?['relative_humidity_2m'] ?? '--'}%',
                               ),
-                              _buildWeatherDetail(
-                                '🌧️ Precipitation',
+                              _buildWeatherDetailWithIcon(
+                                Icons.umbrella, 'Precipitation',
                                 '${_weatherData?['current']?['precipitation'] ?? '0'} in',
                               ),
-                              _buildWeatherDetail(
-                                '🔽 Pressure',
+                              _buildWeatherDetailWithIcon(
+                                Icons.compress, 'Pressure',
                                 '${_weatherData?['current']?['pressure_msl']?.round() ?? '--'} hPa',
                               ),
-                              _buildWeatherDetail(
-                                '🧭 Wind Dir',
+                              _buildWeatherDetailWithIcon(
+                                Icons.explore, 'Wind Dir',
                                 '${_weatherData?['current']?['wind_direction_10m']?.round() ?? '--'}°',
                               ),
-                              _buildWeatherDetail(
-                                '☁️ Clouds',
+                              _buildWeatherDetailWithIcon(
+                                Icons.cloud, 'Clouds',
                                 '${_weatherData?['current']?['cloud_cover'] ?? '--'}%',
                               ),
                             ],
@@ -395,6 +415,44 @@ class _WeatherPageState extends State<WeatherPage> {
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeatherDetailWithIcon(IconData icon, String label, String value) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16, color: Colors.grey[600]),
+                SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 8),
             Text(

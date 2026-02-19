@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import '../home.dart';
 import '../tools.dart';
 import '../health.dart';
@@ -25,6 +24,12 @@ class _RadarPageState extends State<RadarPage> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -56,15 +61,16 @@ class _RadarPageState extends State<RadarPage> {
       }
 
       Position position = await Geolocator.getCurrentPosition();
-      if (mounted) {
-        setState(() {
-          _currentLocation = LatLng(position.latitude, position.longitude);
-          _isLoadingLocation = false;
-        });
-      }
+      if (!mounted) return;
+      
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+        _isLoadingLocation = false;
+      });
+      
       // Move map to current location after a short delay to ensure map is rendered
       Future.delayed(Duration(milliseconds: 100), () {
-        if (mounted) {
+        if (mounted && _mapController != null) {
           _mapController.move(_currentLocation, 8.0);
         }
       });
@@ -180,7 +186,7 @@ class _RadarPageState extends State<RadarPage> {
                       TileLayer(
                         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.my_companion',
-                        tileProvider: CancellableNetworkTileProvider(),
+                        tileProvider: NetworkTileProvider(),
                         tileBuilder: (context, widget, tile) {
                           return ColorFiltered(
                             colorFilter: ColorFilter.mode(
@@ -197,7 +203,7 @@ class _RadarPageState extends State<RadarPage> {
                       TileLayer(
                         urlTemplate: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.my_companion',
-                        tileProvider: CancellableNetworkTileProvider(),
+                        tileProvider: NetworkTileProvider(),
                         tileBuilder: (context, widget, tile) {
                           return Opacity(
                             opacity: _radarOpacity / 100,
