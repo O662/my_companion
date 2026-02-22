@@ -740,9 +740,38 @@ class _HomePageState extends State<HomePage> {
                       _dayOfWeek,
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue),
                     ),
-                    Text(
-                      _dateString,
-                      style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium?.color),
+                    Row(
+                      children: [
+                        const Spacer(),
+                        Text(
+                          _dateString,
+                          style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium?.color),
+                        ),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: const Icon(Icons.refresh, color: Colors.blue, size: 20),
+                              tooltip: 'Refresh weather',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                setState(() {
+                                  _currentTemp = '';
+                                  _feelsLikeTemp = '';
+                                  _highTemp = '';
+                                  _lowTemp = '';
+                                  _locationString = '';
+                                  _coordinates = '';
+                                  _fiveDayForecast = [];
+                                });
+                                _setDateInfo();
+                                _getLocationAndWeather();
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     const Divider(),
