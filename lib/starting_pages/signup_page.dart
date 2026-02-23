@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../home.dart';
+import '../services/google_auth_service.dart';
 
 class SignupPage extends StatefulWidget {
   @override
@@ -14,6 +16,36 @@ class _SignupPageState extends State<SignupPage> {
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _googleEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        _googleEnabled = prefs.getBool('google_signin_enabled') ?? true;
+      });
+    });
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    try {
+      final credential = await GoogleAuthService.signInWithGoogle();
+      if (credential != null && context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-up failed: $e')),
+        );
+      }
+    }
+  }
 
   Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
@@ -101,6 +133,51 @@ class _SignupPageState extends State<SignupPage> {
                 onPressed: _signup,
                 child: Text('Signup'),
               ),
+              if (_googleEnabled) ...[  
+                const SizedBox(height: 24),
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('or', style: TextStyle(color: Colors.black54)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onPressed: _signUpWithGoogle,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Image.asset(
+                            'lib/assets/images/loginLogos/Google_Favicon_2025.png',
+                            height: 24,
+                            width: 24,
+                          ),
+                        ),
+                        const Text(
+                          'Sign up with Google',
+                          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

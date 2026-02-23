@@ -1,6 +1,6 @@
 {
-    "name": "my_companion",
-    "short_name": "my_companion",
+    "name": "My Companion",
+    "short_name": "My Companion",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

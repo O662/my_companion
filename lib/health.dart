@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
+import 'package:health/health.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home.dart';
 import 'tools.dart';
 import 'personal.dart';
@@ -10,7 +15,7 @@ class HealthPage extends StatefulWidget {
   _HealthPageState createState() => _HealthPageState();
 }
 
-class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateMixin {
+class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   int _selectedIndex = 2;
   late TabController _tabController;
 
@@ -24,21 +29,246 @@ class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateM
   ];
 
   // ── Metrics data ───────────────────────────────────────────────────────────
-  // Sample health data - you can later connect to health APIs or Firebase
-  final int _currentSteps = 8247;
+  int _currentSteps = 0;
   final int _goalSteps = 10000;
-  final List<int> _weeklySteps = [7500, 9200, 6800, 8500, 7900, 9600, 8247];
+  List<int> _weeklySteps = List.filled(7, 0);
+  bool _isLoadingSteps = true;
+  String _stepsError = '';
 
   double get _progressPercentage => (_currentSteps / _goalSteps).clamp(0.0, 1.0);
+
+  static const String _consentKey = 'health_data_consent';
+  bool? _userConsent;
+  // True while we're waiting for the user to return from the HC permission screen
+  bool _waitingForHCPermission = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
+    _checkHealthConsent();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When the user returns from the Health Connect permission screen,
+    // re-attempt the data read. HC registers the grant asynchronously so
+    // we add a short delay before reading.
+    if (state == AppLifecycleState.resumed && _waitingForHCPermission) {
+      _waitingForHCPermission = false;
+      Future.delayed(const Duration(milliseconds: 500), _readStepsData);
+    }
+  }
+
+  Future<void> _checkHealthConsent() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getBool(_consentKey);
+
+    if (!mounted) return;
+
+    if (stored == null) {
+      // First time — show our in-app rationale dialog
+      await _showHealthConsentDialog();
+    } else if (stored == true) {
+      _fetchSteps();
+    } else {
+      // User previously declined
+      setState(() {
+        _isLoadingSteps = false;
+        _stepsError = 'health_denied';
+      });
+    }
+  }
+
+  Future<void> _showHealthConsentDialog() async {
+    final granted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.health_and_safety, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Health Data Access'),
+          ],
+        ),
+        content: const Text(
+          'This app would like to read your step count from Health Connect '
+          'to show your daily progress and weekly activity chart.\n\n'
+          'Your data is only used within this app and is never shared.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Deny'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    if (granted == true) {
+      await prefs.setBool(_consentKey, true);
+      setState(() => _userConsent = true);
+      _fetchSteps();
+    } else {
+      await prefs.setBool(_consentKey, false);
+      if (!mounted) return;
+      setState(() {
+        _userConsent = false;
+        _isLoadingSteps = false;
+        _stepsError = 'health_denied';
+      });
+    }
+  }
+
+  Future<void> _fetchSteps() async {
+    if (!mounted) return;
+
+    // Health Connect is Android-only; skip on web/other platforms
+    if (kIsWeb || !Platform.isAndroid) {
+      setState(() {
+        _isLoadingSteps = false;
+        _stepsError = 'Step tracking is only available on Android.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingSteps = true;
+      _stepsError = '';
+    });
+
+    try {
+      // 1. Request ACTIVITY_RECOGNITION runtime permission
+      final activityStatus = await Permission.activityRecognition.request();
+      if (!mounted) return;
+
+      if (activityStatus.isDenied || activityStatus.isPermanentlyDenied) {
+        setState(() {
+          _isLoadingSteps = false;
+          _stepsError = activityStatus.isPermanentlyDenied
+              ? 'Physical Activity permission is permanently denied. Please enable it in app Settings.'
+              : 'Physical Activity permission denied.';
+        });
+        if (activityStatus.isPermanentlyDenied) openAppSettings();
+        return;
+      }
+
+      final health = Health();
+      await health.configure();
+      final types = [HealthDataType.STEPS];
+
+      // 2. Launch the Health Connect permission screen.
+      // The app goes to background while the user interacts with HC.
+      // We set a flag so didChangeAppLifecycleState can trigger the
+      // data read when the user returns — by which time HC has
+      // registered the grant.
+      _waitingForHCPermission = true;
+      await health.requestAuthorization(types);
+      // If requestAuthorization returns without going to background
+      // (permission already granted), the lifecycle won't fire — read now.
+      if (_waitingForHCPermission) {
+        _waitingForHCPermission = false;
+        if (!mounted) return;
+        await _readStepsData();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingSteps = false;
+        _stepsError = 'Error: ${e.toString()}';
+      });
+    }
+  }
+
+  /// Removes duplicate Health Connect data points that arise when multiple
+  /// sources (phone pedometer, Google Fit, Samsung Health, etc.) report the
+  /// same steps for the same time window. Deduplication key is
+  /// sourceId + dateFrom + dateTo + value.
+  List<HealthDataPoint> _removeDuplicates(List<HealthDataPoint> points) {
+    final seen = <String>{};
+    return points.where((p) {
+      final key =
+          '${p.sourceId}|${p.dateFrom.millisecondsSinceEpoch}|${p.dateTo.millisecondsSinceEpoch}|${(p.value as NumericHealthValue).numericValue}';
+      return seen.add(key);
+    }).toList();
+  }
+
+  /// Reads step data from Health Connect. Called either directly (permission
+  /// already granted) or from didChangeAppLifecycleState after the user
+  /// returns from the HC permission screen.
+  Future<void> _readStepsData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingSteps = true;
+      _stepsError = '';
+    });
+
+    try {
+      final health = Health();
+      await health.configure();
+      final types = [HealthDataType.STEPS];
+
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+
+      final rawTodayData = await health.getHealthDataFromTypes(
+        types: types,
+        startTime: todayStart,
+        endTime: now,
+      );
+      if (!mounted) return;
+
+      // Remove duplicate data points from multiple sources (e.g. phone
+      // step counter + Google Fit + Samsung Health all reporting the same steps)
+      final todayData = _removeDuplicates(rawTodayData);
+
+      final todaySteps = todayData.fold<int>(0, (sum, point) {
+        final val = (point.value as NumericHealthValue).numericValue;
+        return sum + val.toInt();
+      });
+
+      final List<int> weekly = [];
+      for (int i = 6; i >= 0; i--) {
+        final dayStart = todayStart.subtract(Duration(days: i));
+        final dayEnd = i == 0 ? now : dayStart.add(const Duration(days: 1));
+        final rawDayData = await health.getHealthDataFromTypes(
+          types: types,
+          startTime: dayStart,
+          endTime: dayEnd,
+        );
+        final dayData = _removeDuplicates(rawDayData);
+        final daySteps = dayData.fold<int>(0, (sum, point) {
+          final val = (point.value as NumericHealthValue).numericValue;
+          return sum + val.toInt();
+        });
+        weekly.add(daySteps);
+        if (!mounted) return;
+      }
+
+      setState(() {
+        _currentSteps = todaySteps;
+        _weeklySteps = weekly;
+        _isLoadingSteps = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingSteps = false;
+        _stepsError = 'Error: ${e.toString()}';
+      });
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
   }
@@ -190,9 +420,61 @@ class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateM
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.refresh, color: Colors.green, size: 20),
+                            tooltip: 'Refresh steps',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: _fetchSteps,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
+                      if (_isLoadingSteps)
+                        const Center(child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: CircularProgressIndicator(color: Colors.green),
+                        ))
+                      else if (_stepsError.isNotEmpty)
+                        Center(child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: _stepsError == 'health_denied'
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.health_and_safety_outlined,
+                                        size: 40, color: Colors.grey),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Health data access was denied.',
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextButton.icon(
+                                      icon: const Icon(Icons.lock_open),
+                                      label: const Text('Grant Access'),
+                                      onPressed: () async {
+                                        final prefs = await SharedPreferences.getInstance();
+                                        await prefs.remove(_consentKey);
+                                        setState(() {
+                                          _isLoadingSteps = true;
+                                          _stepsError = '';
+                                        });
+                                        await _checkHealthConsent();
+                                      },
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  _stepsError,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
+                                ),
+                        ))
+                      else
+                      Column(
+                        children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -276,6 +558,8 @@ class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateM
                                   .toList(),
                             ),
                           ),
+                        ],
+                      ),
                         ],
                       ),
                     ],
