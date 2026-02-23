@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'theme_provider.dart';
 import 'starting_pages/welcome_page.dart';
+import 'change_password_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -157,6 +158,12 @@ class _ProfilePageState extends State<ProfilePage>
     if (_weightUseMetric) return '$kgDisplay kg';
     final lbs = (kg * 2.20462).round();
     return '$lbs lbs ($kgDisplay kg)';
+  }
+
+  bool get _isEmailPasswordUser {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    return user.providerData.any((p) => p.providerId == 'password');
   }
 
   Future<void> _saveField(String field, String value) async {
@@ -964,6 +971,20 @@ class _ProfilePageState extends State<ProfilePage>
                                 activeColor: Colors.blue,
                               ),
                             ),
+                            if (_isEmailPasswordUser) ...
+                            [
+                              const Divider(),
+                              ListTile(
+                                leading: const Icon(Icons.lock_reset, color: Colors.blue),
+                                title: const Text('Change Password'),
+                                subtitle: const Text('Update your account password'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                                ),
+                              ),
+                            ],
                             const Divider(),
                             ListTile(
                               leading: const Icon(Icons.g_mobiledata, color: Colors.blue, size: 32),
