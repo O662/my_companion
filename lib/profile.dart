@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
@@ -10,6 +11,9 @@ import 'theme_provider.dart';
 import 'starting_pages/welcome_page.dart';
 import 'change_password_page.dart';
 import 'set_password_page.dart';
+import 'edit_address_page.dart';
+import 'edit_vehicle_page.dart';
+import 'edit_profile_info_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -25,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage>
   DateTime? _dobDate;
   String _email     = '';
   String _gender    = '';
+  String _pronouns  = '';
   String _height    = '';
   String _weight    = '';
   bool   _heightUseMetric = true;
@@ -41,6 +46,14 @@ class _ProfilePageState extends State<ProfilePage>
   bool _loading = true;
   bool _saving  = false;
   bool _isGoogleLinked = false;
+  bool _addressExpanded = false;
+  bool _vehicleExpanded = false;
+  bool _profileExpanded = false;
+  String _vehicleBrand = '';
+  String _vehicleModel = '';
+  String _vehicleYear  = '';
+  String _vehicleColor = '';
+  String _vehicleVin   = '';
   String? _editingField;
   String? _genderSelected;
 
@@ -117,6 +130,7 @@ class _ProfilePageState extends State<ProfilePage>
       case 'nickname':        return _nickname;
       case 'email':           return _email;
       case 'gender':          return _gender;
+      case 'pronouns':         return _pronouns;
       case 'address_street':  return _addressStreet;
       case 'address_city':    return _addressCity;
       case 'address_state':   return _addressState;
@@ -286,6 +300,7 @@ class _ProfilePageState extends State<ProfilePage>
             break;
           case 'email':  _email  = value; break;
           case 'gender': _gender = value; break;
+          case 'pronouns': _pronouns = value; break;
           case 'height': _height = value; break;
           case 'weight': _weight = value; break;
           case 'address_street':  _addressStreet  = value; break;
@@ -311,6 +326,61 @@ class _ProfilePageState extends State<ProfilePage>
     } finally {
       setState(() => _saving = false);
     }
+  }
+
+  Future<void> _showFeedbackDialog(BuildContext context, String title) async {
+    const supportEmail = 'support@mycompanion.app';
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text('You can send us an email at $supportEmail. You can also copy the address to clipboard.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(const ClipboardData(text: supportEmail));
+              Navigator.of(ctx).pop();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Support email copied to clipboard')),
+                );
+              }
+            },
+            child: const Text('Copy Email'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.blue),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 2),
+                Text(
+                  value.isNotEmpty ? value : '—',
+                  style: const TextStyle(fontSize: 15),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEditRow({
@@ -350,7 +420,6 @@ class _ProfilePageState extends State<ProfilePage>
                         labelText: label,
                         border: const OutlineInputBorder(),
                       ),
-                    )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -868,6 +937,11 @@ class _ProfilePageState extends State<ProfilePage>
           _addressCountry = data['address_country'] ?? '';
           _addressZip     = data['address_zip']     ?? '';
           _language       = data['language']        ?? '';
+          _vehicleBrand = data['vehicle_brand'] ?? '';
+          _vehicleModel = data['vehicle_model'] ?? '';
+          _vehicleYear  = data['vehicle_year']  ?? '';
+          _vehicleColor = data['vehicle_color'] ?? '';
+          _vehicleVin   = data['vehicle_vin']   ?? '';
           final ts = data['password_last_changed'];
           _lastPasswordChanged = ts is Timestamp ? ts.toDate() : null;
           _isGoogleLinked = isGoogle;
@@ -939,11 +1013,16 @@ class _ProfilePageState extends State<ProfilePage>
                                     : const AssetImage('lib/assets/profile/profilepicture.png'),
                               ),
                               const SizedBox(width: 16),
-                              Column(
+                              Flexible(
+                                child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _nickname.isNotEmpty ? _nickname : (_firstName.isNotEmpty ? _firstName : 'Name'),
+                                    _nickname.isNotEmpty
+                                        ? _nickname
+                                        : '${_firstName.isNotEmpty ? _firstName : ''} ${_lastName.isNotEmpty ? _lastName : ''}'.trim().isNotEmpty
+                                            ? '${_firstName} ${_lastName}'.trim()
+                                            : 'Name',
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -951,15 +1030,16 @@ class _ProfilePageState extends State<ProfilePage>
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _nickname.isNotEmpty
-                                        ? '${_firstName.isNotEmpty ? _firstName : ''} ${_lastName.isNotEmpty ? _lastName : ''}'.trim()
-                                        : (_lastName.isNotEmpty ? _lastName : ''),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                    _email.isNotEmpty
+                                        ? _email + (_isGoogleLinked ? '  |  Linked with Google.' : '')
+                                        : (_isGoogleLinked ? 'Linked with Google.' : ''),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
                                 ],
+                              ),
                               ),
                             ],
                           ),
@@ -988,51 +1068,383 @@ class _ProfilePageState extends State<ProfilePage>
                   children: [
                     Card(
                       elevation: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _profileExpanded ? null : () => setState(() => _profileExpanded = true),
+                        child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Profile',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            // Header
+                            InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: _profileExpanded ? () => setState(() => _profileExpanded = false) : null,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Profile',
+                                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    AnimatedRotation(
+                                      turns: _profileExpanded ? 0.5 : 0,
+                                      duration: const Duration(milliseconds: 200),
+                                      child: const Icon(Icons.expand_more),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 16),
-                            _buildEditRow(field: 'nickname',   label: 'Nickname / Preferred Name'),
-                            _buildEditRow(field: 'first_name', label: 'First Name'),
-                            _buildEditRow(field: 'last_name',  label: 'Last Name'),
-                            _buildEditRow(field: 'email',  label: 'Email', keyboardType: TextInputType.emailAddress),
-                            _buildDobRow(),
-                            _buildGenderRow(),
-                            _buildLanguageRow(),
-                            _buildHeightRow(),
-                            _buildWeightRow(),
+                            AnimatedCrossFade(
+                              duration: const Duration(milliseconds: 200),
+                              crossFadeState: _profileExpanded
+                                  ? CrossFadeState.showSecond
+                                  : CrossFadeState.showFirst,
+                              firstChild: Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  () {
+                                    final namePart = _nickname.isNotEmpty
+                                        ? '"$_nickname"'
+                                        : '${_firstName} ${_lastName}'.trim();
+                                    final parts = [
+                                      if (namePart.isNotEmpty) namePart,
+                                      if (_calculatedAge != null) '${_calculatedAge} yrs',
+                                      if (_gender.isNotEmpty) _gender,
+                                    ];
+                                    return parts.isNotEmpty ? parts.join(' · ') : 'No profile info set';
+                                  }(),
+                                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              secondChild: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  if (_nickname.isNotEmpty)
+                                    _buildAddressRow(Icons.badge, 'Nickname', _nickname),
+                                  _buildAddressRow(Icons.person, 'First Name', _firstName),
+                                  _buildAddressRow(Icons.person_outline, 'Last Name', _lastName),
+                                  _buildAddressRow(Icons.email, 'Email', _email),
+                                  _buildAddressRow(Icons.cake, 'Date of Birth',
+                                    _dobDate != null
+                                        ? '${_dobDate!.month.toString().padLeft(2,'0')}/${_dobDate!.day.toString().padLeft(2,'0')}/${_dobDate!.year}'
+                                          '${_calculatedAge != null ? ' (${_calculatedAge} yrs)' : ''}'
+                                        : '—'),
+                                  _buildAddressRow(Icons.wc, 'Gender', _gender),
+                                  if (_pronouns.isNotEmpty)
+                                    _buildAddressRow(Icons.tag_faces, 'Pronouns', _pronouns),
+                                  _buildAddressRow(Icons.height, 'Height', _heightDisplay),
+                                  _buildAddressRow(Icons.monitor_weight_outlined, 'Weight', _weightDisplay),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.edit),
+                                      label: const Text('Edit Profile'),
+                                      onPressed: () async {
+                                        final result = await Navigator.push<ProfileInfoData>(
+                                          context,
+                                          MaterialPageRoute(
+                                            fullscreenDialog: true,
+                                            builder: (_) => EditProfileInfoPage(
+                                              initial: ProfileInfoData(
+                                                nickname:     _nickname,
+                                                firstName:    _firstName,
+                                                lastName:     _lastName,
+                                                email:        _email,
+                                                dob:          _dob,
+                                                gender:       _gender,
+                                                pronouns:     _pronouns,
+                                                height:       _height,
+                                                weight:       _weight,
+                                                heightMetric: _heightUseMetric,
+                                                weightMetric: _weightUseMetric,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          setState(() {
+                                            _nickname        = result.nickname;
+                                            _firstName       = result.firstName;
+                                            _lastName        = result.lastName;
+                                            _email           = result.email;
+                                            _dob             = result.dob;
+                                            _dobDate         = result.dob.isNotEmpty ? DateTime.tryParse(result.dob) : null;
+                                            _gender          = result.gender;
+                                            _pronouns        = result.pronouns;
+                                            _height          = result.height;
+                                            _weight          = result.weight;
+                                            _heightUseMetric = result.heightMetric;
+                                            _weightUseMetric = result.weightMetric;
+                                            _genderSelected  = result.gender.isNotEmpty ? result.gender : null;
+                                          });
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Profile updated!')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
+                  ),
                     const SizedBox(height: 16),
                     Card(
                       elevation: 4,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _addressExpanded ? null : () => setState(() => _addressExpanded = true),
+                        child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Home Address',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            // Header row — always visible
+                            InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: _addressExpanded ? () => setState(() => _addressExpanded = false) : null,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Home Address',
+                                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    AnimatedRotation(
+                                      turns: _addressExpanded ? 0.5 : 0,
+                                      duration: const Duration(milliseconds: 200),
+                                      child: const Icon(Icons.expand_more),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 16),
-                            _buildEditRow(field: 'address_street',  label: 'Street Address'),
-                            _buildEditRow(field: 'address_city',    label: 'City'),
-                            _buildEditRow(field: 'address_state',   label: 'State / Province'),
-                            _buildEditRow(field: 'address_country', label: 'Country'),
-                            _buildEditRow(field: 'address_zip',     label: 'Zip / Postal Code', keyboardType: TextInputType.number),
+                            // Summary line — visible when collapsed
+                            AnimatedCrossFade(
+                              duration: const Duration(milliseconds: 200),
+                              crossFadeState: _addressExpanded
+                                  ? CrossFadeState.showSecond
+                                  : CrossFadeState.showFirst,
+                              firstChild: Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  [
+                                    _addressStreet,
+                                    _addressCity,
+                                    _addressCountry,
+                                  ].where((s) => s.isNotEmpty).join(', ').isNotEmpty
+                                      ? [
+                                          _addressStreet,
+                                          _addressCity,
+                                          _addressCountry,
+                                        ].where((s) => s.isNotEmpty).join(', ')
+                                      : 'No address set',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              secondChild: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  _buildAddressRow(Icons.signpost,    'Street', _addressStreet),
+                                  _buildAddressRow(Icons.location_city, 'City', _addressCity),
+                                  _buildAddressRow(Icons.map,         'State / Province', _addressState),
+                                  _buildAddressRow(Icons.public,      'Country', _addressCountry),
+                                  _buildAddressRow(Icons.markunread_mailbox, 'Zip / Postal Code', _addressZip),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.edit),
+                                      label: const Text('Edit Address'),
+                                      onPressed: () async {
+                                        final result = await Navigator.push<AddressData>(
+                                          context,
+                                          MaterialPageRoute(
+                                            fullscreenDialog: true,
+                                            builder: (_) => EditAddressPage(
+                                              initial: AddressData(
+                                                street:  _addressStreet,
+                                                city:    _addressCity,
+                                                state:   _addressState,
+                                                country: _addressCountry,
+                                                zip:     _addressZip,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          setState(() {
+                                            _addressStreet  = result.street;
+                                            _addressCity    = result.city;
+                                            _addressState   = result.state;
+                                            _addressCountry = result.country;
+                                            _addressZip     = result.zip;
+                                            _addressStreetController.text  = result.street;
+                                            _addressCityController.text    = result.city;
+                                            _addressStateController.text   = result.state;
+                                            _addressCountryController.text = result.country;
+                                            _addressZipController.text     = result.zip;
+                                          });
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Address updated!')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
+                  ),
+                    const SizedBox(height: 16),
+                    // Vehicle card
+                    Card(
+                      elevation: 4,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _vehicleExpanded ? null : () => setState(() => _vehicleExpanded = true),
+                        child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: _vehicleExpanded ? () => setState(() => _vehicleExpanded = false) : null,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Vehicle',
+                                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    AnimatedRotation(
+                                      turns: _vehicleExpanded ? 0.5 : 0,
+                                      duration: const Duration(milliseconds: 200),
+                                      child: const Icon(Icons.expand_more),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            AnimatedCrossFade(
+                              duration: const Duration(milliseconds: 200),
+                              crossFadeState: _vehicleExpanded
+                                  ? CrossFadeState.showSecond
+                                  : CrossFadeState.showFirst,
+                              firstChild: Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  [
+                                    if (_vehicleColor.isNotEmpty) _vehicleColor,
+                                    if (_vehicleYear.isNotEmpty) _vehicleYear,
+                                    if (_vehicleBrand.isNotEmpty) _vehicleBrand,
+                                    if (_vehicleModel.isNotEmpty) _vehicleModel,
+                                  ].join(' ').trim().isNotEmpty
+                                      ? [
+                                          if (_vehicleColor.isNotEmpty) _vehicleColor,
+                                          if (_vehicleYear.isNotEmpty) _vehicleYear,
+                                          if (_vehicleBrand.isNotEmpty) _vehicleBrand,
+                                          if (_vehicleModel.isNotEmpty) _vehicleModel,
+                                        ].join(' ').trim()
+                                      : 'No vehicle set',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              secondChild: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  _buildAddressRow(Icons.directions_car,  'Brand',      _vehicleBrand),
+                                  _buildAddressRow(Icons.car_repair,       'Model',      _vehicleModel),
+                                  _buildAddressRow(Icons.calendar_today,   'Year',       _vehicleYear),
+                                  _buildAddressRow(Icons.palette,          'Color',      _vehicleColor),
+                                  _buildAddressRow(Icons.pin,              'VIN Number', _vehicleVin),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.edit),
+                                      label: const Text('Edit Vehicle'),
+                                      onPressed: () async {
+                                        final result = await Navigator.push<VehicleData>(
+                                          context,
+                                          MaterialPageRoute(
+                                            fullscreenDialog: true,
+                                            builder: (_) => EditVehiclePage(
+                                              initial: VehicleData(
+                                                brand: _vehicleBrand,
+                                                model: _vehicleModel,
+                                                year:  _vehicleYear,
+                                                color: _vehicleColor,
+                                                vin:   _vehicleVin,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          setState(() {
+                                            _vehicleBrand = result.brand;
+                                            _vehicleModel = result.model;
+                                            _vehicleYear  = result.year;
+                                            _vehicleColor = result.color;
+                                            _vehicleVin   = result.vin;
+                                          });
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Vehicle updated!')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   ],
                 ),
                 // Settings tab
@@ -1097,6 +1509,38 @@ class _ProfilePageState extends State<ProfilePage>
                             ],
                             const Divider(),
                             ListTile(
+                              leading: const Icon(Icons.language, color: Colors.blue),
+                              title: const Text('Preferred Language'),
+                              subtitle: Text(_language.isNotEmpty ? _language : 'Not set'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () async {
+                                final picked = await showDialog<String>(
+                                  context: context,
+                                  builder: (ctx) => SimpleDialog(
+                                    title: const Text('Preferred Language'),
+                                    children: _languageOptions
+                                        .map((lang) => SimpleDialogOption(
+                                              onPressed: () => Navigator.pop(ctx, lang),
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                                child: Text(lang,
+                                                    style: TextStyle(
+                                                      fontWeight: lang == _language
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                    )),
+                                              ),
+                                            ))
+                                        .toList(),
+                                  ),
+                                );
+                                if (picked != null && picked != _language) {
+                                  _saveField('language', picked);
+                                }
+                              },
+                            ),
+                            const Divider(),
+                            ListTile(
                               leading: Image.asset(
                                 'lib/assets/images/loginLogos/Google_Favicon_2025.png',
                                 width: 32,
@@ -1125,11 +1569,56 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     ),
                     const SizedBox(height: 16),
+                    Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Feedback',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ListTile(
+                              leading: const Icon(Icons.lightbulb, color: Colors.blue),
+                              title: const Text('Suggest a Feature'),
+                              subtitle: const Text('Tell us what you would like to see'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => _showFeedbackDialog(context, 'Suggest a Feature'),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.bug_report, color: Colors.blue),
+                              title: const Text('Report a Bug'),
+                              subtitle: const Text('Found an issue? Let us know'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => _showFeedbackDialog(context, 'Report a Bug'),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.feedback, color: Colors.blue),
+                              title: const Text('Leave Feedback'),
+                              subtitle: const Text('Share your thoughts with us'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => _showFeedbackDialog(context, 'Leave Feedback'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ],
-            ),
-          ),
+            )
+          );
           // Logout button pinned at the bottom
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),

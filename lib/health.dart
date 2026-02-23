@@ -38,7 +38,6 @@ class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateM
   double get _progressPercentage => (_currentSteps / _goalSteps).clamp(0.0, 1.0);
 
   static const String _consentKey = 'health_data_consent';
-  bool? _userConsent;
   // True while we're waiting for the user to return from the HC permission screen
   bool _waitingForHCPermission = false;
 
@@ -114,13 +113,11 @@ class _HealthPageState extends State<HealthPage> with SingleTickerProviderStateM
     final prefs = await SharedPreferences.getInstance();
     if (granted == true) {
       await prefs.setBool(_consentKey, true);
-      setState(() => _userConsent = true);
       _fetchSteps();
     } else {
       await prefs.setBool(_consentKey, false);
       if (!mounted) return;
       setState(() {
-        _userConsent = false;
         _isLoadingSteps = false;
         _stepsError = 'health_denied';
       });
