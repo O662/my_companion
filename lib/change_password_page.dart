@@ -49,7 +49,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        final msg = e.code == 'wrong-password'
+        final msg = (e.code == 'wrong-password' || e.code == 'invalid-credential')
             ? 'Current password is incorrect.'
             : e.message ?? 'Failed to change password.';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,6 +85,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               TextFormField(
                 controller: _currentPassCtrl,
                 obscureText: _obscureCurrent,
+                enableSuggestions: false,
+                autocorrect: false,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'Current Password',
@@ -102,6 +104,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               TextFormField(
                 controller: _newPassCtrl,
                 obscureText: _obscureNew,
+                enableSuggestions: false,
+                autocorrect: false,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'New Password',
@@ -122,6 +126,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               TextFormField(
                 controller: _confirmPassCtrl,
                 obscureText: _obscureConfirm,
+                enableSuggestions: false,
+                autocorrect: false,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
