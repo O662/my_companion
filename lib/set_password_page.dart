@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key});
+/// Shown when a Google-only user wants to add a password to their account
+/// (required before unlinking Google). Links the email/password provider
+/// so they have a fallback sign-in method.
+class SetPasswordPage extends StatefulWidget {
+  const SetPasswordPage({super.key});
 
   @override
-  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+  State<SetPasswordPage> createState() => _SetPasswordPageState();
 }
 
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
-  final _formKey            = GlobalKey<FormState>();
-  final _currentPassCtrl    = TextEditingController();
-  final _newPassCtrl        = TextEditingController();
-  final _confirmPassCtrl    = TextEditingController();
+class _SetPasswordPageState extends State<SetPasswordPage> {
+  final _formKey        = GlobalKey<FormState>();
+  final _newPassCtrl    = TextEditingController();
+  final _confirmCtrl    = TextEditingController();
 
-  bool _obscureCurrent = true;
   bool _obscureNew     = true;
   bool _obscureConfirm = true;
   bool _saving         = false;
 
   @override
   void dispose() {
-    _currentPassCtrl.dispose();
     _newPassCtrl.dispose();
-    _confirmPassCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
@@ -35,28 +34,24 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     setState(() => _saving = true);
     try {
-      final credential = EmailAuthProvider.credential(
+      // Link email/password provider to this (currently Google-only) account
+      final emailCredential = EmailAuthProvider.credential(
         email: user.email!,
-        password: _currentPassCtrl.text,
+        password: _newPassCtrl.text,
       );
-      await user.reauthenticateWithCredential(credential);
-      await user.updatePassword(_newPassCtrl.text);
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set({'password_last_changed': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      await user.linkWithCredential(emailCredential);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password updated successfully!')),
+          const SnackBar(content: Text('Password set successfully!')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true); // signals success to caller
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        final msg = (e.code == 'wrong-password' || e.code == 'invalid-credential')
-            ? 'Current password is incorrect.'
-            : e.message ?? 'Failed to change password.';
+        final msg = e.code == 'provider-already-linked'
+            ? 'An email/password is already set on this account.'
+            : e.message ?? 'Failed to set password.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg)),
         );
@@ -70,7 +65,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Change Password'),
+        title: const Text('Set a Password'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -79,33 +74,24 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.lock_reset, size: 72, color: Colors.blue),
-              const SizedBox(height: 8),
+              const Icon(Icons.password, size: 72, color: Colors.blue),
+              const SizedBox(height: 12),
               const Text(
-                'Update your password',
+                'Create a password',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 32),
-              TextFormField(
-                controller: _currentPassCtrl,
-                obscureText: _obscureCurrent,
-                enableSuggestions: false,
-                autocorrect: false,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: 'Current Password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureCurrent ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
-                  ),
-                  border: const OutlineInputBorder(),
+              const SizedBox(height: 8),
+              Text(
+                'You need a password before you can unlink Google. '
+                'This lets you still sign in with your email and password.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
                 ),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Enter your current password' : null,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
               TextFormField(
                 controller: _newPassCtrl,
                 obscureText: _obscureNew,
@@ -122,21 +108,21 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   border: const OutlineInputBorder(),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Enter a new password';
+                  if (v == null || v.isEmpty) return 'Enter a password';
                   if (v.length < 6) return 'Password must be at least 6 characters';
                   return null;
                 },
               ),
               const SizedBox(height: 20),
               TextFormField(
-                controller: _confirmPassCtrl,
+                controller: _confirmCtrl,
                 obscureText: _obscureConfirm,
                 enableSuggestions: false,
                 autocorrect: false,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
-                  labelText: 'Confirm New Password',
+                  labelText: 'Confirm Password',
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
@@ -145,7 +131,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   border: const OutlineInputBorder(),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Please confirm your new password';
+                  if (v == null || v.isEmpty) return 'Please confirm your password';
                   if (v != _newPassCtrl.text) return 'Passwords do not match';
                   return null;
                 },
@@ -172,7 +158,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           ),
                         )
                       : const Text(
-                          'Update Password',
+                          'Set Password & Unlink Google',
                           style: TextStyle(fontSize: 16),
                         ),
                 ),

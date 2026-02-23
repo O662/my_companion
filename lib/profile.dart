@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'theme_provider.dart';
 import 'starting_pages/welcome_page.dart';
 import 'change_password_page.dart';
+import 'set_password_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -26,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage>
   String _weight    = '';
   bool   _heightUseMetric = true;
   bool   _weightUseMetric = true;
+  DateTime? _lastPasswordChanged;
   String _addressStreet  = '';
   String _addressCity    = '';
   String _addressState   = '';
@@ -36,7 +40,7 @@ class _ProfilePageState extends State<ProfilePage>
   String? _photoUrl;
   bool _loading = true;
   bool _saving  = false;
-  bool _googleSignInEnabled = true;
+  bool _isGoogleLinked = false;
   String? _editingField;
   String? _genderSelected;
 
@@ -76,11 +80,8 @@ class _ProfilePageState extends State<ProfilePage>
     _addressCountryController   = TextEditingController();
     _addressZipController       = TextEditingController();
     _loadProfile();
-    SharedPreferences.getInstance().then((prefs) {
-      setState(() {
-        _googleSignInEnabled = prefs.getBool('google_signin_enabled') ?? true;
-      });
-    });
+    final user = FirebaseAuth.instance.currentUser;
+    _isGoogleLinked = user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
   }
 
   @override
@@ -160,10 +161,104 @@ class _ProfilePageState extends State<ProfilePage>
     return '$lbs lbs ($kgDisplay kg)';
   }
 
+  String _formatPasswordDate(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays == 0) return 'today';
+    if (diff.inDays == 1) return 'yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final sameYear = dt.year == now.year;
+    return sameYear
+        ? '${months[dt.month - 1]} ${dt.day}'
+        : '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
   bool get _isEmailPasswordUser {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
     return user.providerData.any((p) => p.providerId == 'password');
+  }
+
+  Future<void> _linkGoogle() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      if (kIsWeb) {
+        final result = await user.linkWithPopup(GoogleAuthProvider());
+        if (result.user != null) {
+          setState(() => _isGoogleLinked = true);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('google_signin_enabled', true);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Google account linked successfully!')),
+            );
+          }
+        }
+      } else {
+        final googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) return; // user cancelled
+        final googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        await user.linkWithCredential(credential);
+        setState(() => _isGoogleLinked = true);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('google_signin_enabled', true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Google account linked successfully!')),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        final msg = e.code == 'credential-already-in-use'
+            ? 'This Google account is already linked to another user.'
+            : e.code == 'provider-already-linked'
+                ? 'A Google account is already linked.'
+                : e.message ?? 'Failed to link Google account.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    }
+  }
+
+  Future<void> _unlinkGoogle() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    // If no password provider, the user must create one first
+    if (!_isEmailPasswordUser) {
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const SetPasswordPage()),
+      );
+      if (result != true) return; // user cancelled
+      // Reload user so _isEmailPasswordUser reflects the new provider
+      await FirebaseAuth.instance.currentUser?.reload();
+    }
+    try {
+      await FirebaseAuth.instance.currentUser!.unlink('google.com');
+      setState(() => _isGoogleLinked = false);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('google_signin_enabled', false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google account unlinked.')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Failed to unlink Google.')),
+        );
+      }
+    }
   }
 
   Future<void> _saveField(String field, String value) async {
@@ -747,10 +842,13 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _loadProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _photoUrl = user.photoURL;
+      await user.reload(); // refresh provider data
+      final freshUser = FirebaseAuth.instance.currentUser!;
+      _photoUrl = freshUser.photoURL;
+      final isGoogle = freshUser.providerData.any((p) => p.providerId == 'google.com');
       final doc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(user.uid)
+          .doc(freshUser.uid)
           .get();
       if (doc.exists) {
         final data = doc.data()!;
@@ -760,7 +858,7 @@ class _ProfilePageState extends State<ProfilePage>
           _nickname  = data['nickname']   ?? '';
           _dob       = data['dob']        ?? '';
           _dobDate   = _dob.isNotEmpty ? DateTime.tryParse(_dob) : null;
-          _email     = data['email']      ?? user.email ?? '';
+          _email     = data['email']      ?? freshUser.email ?? '';
           _gender    = data['gender']     ?? '';
           _height    = data['height']     ?? '';
           _weight    = data['weight']     ?? '';
@@ -770,6 +868,9 @@ class _ProfilePageState extends State<ProfilePage>
           _addressCountry = data['address_country'] ?? '';
           _addressZip     = data['address_zip']     ?? '';
           _language       = data['language']        ?? '';
+          final ts = data['password_last_changed'];
+          _lastPasswordChanged = ts is Timestamp ? ts.toDate() : null;
+          _isGoogleLinked = isGoogle;
           _firstNameController.text       = _firstName;
           _lastNameController.text        = _lastName;
           _nicknameController.text        = _nickname;
@@ -786,8 +887,9 @@ class _ProfilePageState extends State<ProfilePage>
         return;
       } else {
         setState(() {
-          _email = user.email ?? '';
+          _email = freshUser.email ?? '';
           _emailController.text = _email;
+          _isGoogleLinked = isGoogle;
           _loading = false;
         });
         return;
@@ -977,27 +1079,43 @@ class _ProfilePageState extends State<ProfilePage>
                               ListTile(
                                 leading: const Icon(Icons.lock_reset, color: Colors.blue),
                                 title: const Text('Change Password'),
-                                subtitle: const Text('Update your account password'),
+                                subtitle: Text(
+                                  _lastPasswordChanged != null
+                                      ? 'Last changed ${_formatPasswordDate(_lastPasswordChanged!)}'
+                                      : 'Update your account password',
+                                  style: (_lastPasswordChanged != null &&
+                                          DateTime.now().difference(_lastPasswordChanged!).inDays > 90)
+                                      ? const TextStyle(color: Color(0xFFB8860B))
+                                      : null,
+                                ),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
-                                ),
+                                ).then((_) => _loadProfile()),
                               ),
                             ],
                             const Divider(),
                             ListTile(
-                              leading: const Icon(Icons.g_mobiledata, color: Colors.blue, size: 32),
+                              leading: Image.asset(
+                                'lib/assets/images/loginLogos/Google_Favicon_2025.png',
+                                width: 32,
+                                height: 32,
+                              ),
                               title: const Text('Google Sign-In'),
                               subtitle: Text(
-                                _googleSignInEnabled ? 'Shown on login & signup' : 'Hidden on login & signup',
+                                _isGoogleLinked
+                                    ? 'Linked to your account'
+                                    : 'Not linked',
                               ),
                               trailing: Switch(
-                                value: _googleSignInEnabled,
-                                onChanged: (value) async {
-                                  final prefs = await SharedPreferences.getInstance();
-                                  await prefs.setBool('google_signin_enabled', value);
-                                  setState(() => _googleSignInEnabled = value);
+                                value: _isGoogleLinked,
+                                onChanged: (value) {
+                                  if (value) {
+                                    _linkGoogle();
+                                  } else {
+                                    _unlinkGoogle();
+                                  }
                                 },
                                 activeColor: Colors.blue,
                               ),
