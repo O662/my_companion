@@ -420,6 +420,7 @@ class _ProfilePageState extends State<ProfilePage>
                         labelText: label,
                         border: const OutlineInputBorder(),
                       ),
+                    )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1609,16 +1610,12 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
-                          ],
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 16),
                   ],
                 ),
               ],
-            )
-          );
+            ),
+          ),
           // Logout button pinned at the bottom
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
