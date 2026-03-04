@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:provider/provider.dart';
 import 'home.dart';
 import 'starting_pages/welcome_page.dart';
@@ -14,9 +15,22 @@ import 'theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  if (!kIsWeb) {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: const AndroidPlayIntegrityProvider(),
+        providerApple: const AppleAppAttestProvider(),
+      );
+    } catch (e) {
+      debugPrint('Firebase App Check activation failed: $e');
+    }
+  }
+
 
   // Suppress the "disposed EngineFlutterView" assertion that fires on
   // Flutter Web during hot restart. It is harmless and does not affect
@@ -26,7 +40,6 @@ void main() async {
     FlutterError.onError = (FlutterErrorDetails details) {
       final message = details.exceptionAsString();
       if (message.contains('disposed EngineFlutterView')) {
-        // Ignore this web-engine hot-restart artefact.
         return;
       }
       originalOnError?.call(details);
@@ -40,6 +53,7 @@ void main() async {
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   @override
