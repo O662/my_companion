@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -50,29 +51,53 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
       try {
+        final email = _emailController.text.trim();
+        final firstName = _firstNameController.text.trim();
+        final lastName = _lastNameController.text.trim();
+
         UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text,
+          email: email,
           password: _passwordController.text,
         );
-        // Optionally, update the user's display name
-        await userCredential.user!.updateDisplayName('${_firstNameController.text} ${_lastNameController.text}');
+        // Update the user's display name
+        await userCredential.user!.updateDisplayName('$firstName $lastName');
 
         // Save user info to Firestore
         await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-          'first_name': _firstNameController.text,
-          'last_name': _lastNameController.text,
-          'email': _emailController.text,
+          'first_name': firstName,
+          'last_name': lastName,
+          'email': email,
         });
 
         // Navigate to the home page and remove all previous routes
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-          (Route<dynamic> route) => false,
-        );
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+            (Route<dynamic> route) => false,
+          );
+        }
       } on FirebaseAuthException catch (e) {
-        // Handle signup errors here
-        print('Error: $e');
+        if (kDebugMode) print('Signup error: ${e.code}');
+        if (context.mounted) {
+          String msg;
+          switch (e.code) {
+            case 'email-already-in-use':
+              msg = 'An account already exists with that email.';
+              break;
+            case 'invalid-email':
+              msg = 'Please enter a valid email address.';
+              break;
+            case 'weak-password':
+              msg = 'Password is too weak. Use at least 6 characters.';
+              break;
+            default:
+              msg = 'Signup failed. Please try again.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg)),
+          );
+        }
       }
     }
   }
@@ -110,9 +135,14 @@ class _SignupPageState extends State<SignupPage> {
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())) {
+                    return 'Please enter a valid email address';
                   }
                   return null;
                 },
@@ -121,9 +151,14 @@ class _SignupPageState extends State<SignupPage> {
                 controller: _passwordController,
                 decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
+                enableSuggestions: false,
+                autocorrect: false,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
                   }
                   return null;
                 },

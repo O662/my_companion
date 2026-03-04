@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,19 +48,41 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       try {
-        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text,
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
           password: _passwordController.text,
         );
         // Navigate to the home page and remove all previous routes
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-          (Route<dynamic> route) => false,
-        );
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+            (Route<dynamic> route) => false,
+          );
+        }
       } on FirebaseAuthException catch (e) {
-        // Handle login errors here
-        print('Error: $e');
+        if (kDebugMode) print('Login error: ${e.code}');
+        if (context.mounted) {
+          String msg;
+          switch (e.code) {
+            case 'user-not-found':
+            case 'wrong-password':
+            case 'invalid-credential':
+              msg = 'Invalid email or password.';
+              break;
+            case 'user-disabled':
+              msg = 'This account has been disabled.';
+              break;
+            case 'too-many-requests':
+              msg = 'Too many attempts. Please try again later.';
+              break;
+            default:
+              msg = 'Login failed. Please try again.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg)),
+          );
+        }
       }
     }
   }
@@ -143,6 +166,8 @@ class _LoginPageState extends State<LoginPage> {
                                 prefixIcon: Icon(Icons.lock),
                               ),
                               obscureText: true,
+                              enableSuggestions: false,
+                              autocorrect: false,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter your password';

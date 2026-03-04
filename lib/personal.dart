@@ -15,11 +15,11 @@ class _PersonalPageState extends State<PersonalPage> {
 
   // Vehicle information - you can later connect this to Firebase
   final Map<String, String> _vehicleInfo = {
-    'make': 'Toyota',
-    'model': 'Camry',
-    'year': '2022',
-    'vin': '1HGBH41JXMN109186',
-    'mileage': '28,450',
+    'make': '',
+    'model': '',
+    'year': '',
+    'vin': '',
+    'mileage': '',
   };
 
   // Vehicle maintenance reminders

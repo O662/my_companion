@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
@@ -85,7 +86,7 @@ class _WeatherPageState extends State<WeatherPage> {
       
       final response = await http.get(weatherUrl);
       
-      print('Weather API Response Status: ${response.statusCode}');
+      if (kDebugMode) print('Weather API Response Status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -126,7 +127,7 @@ class _WeatherPageState extends State<WeatherPage> {
             }
           }
         } catch (e) {
-          print('Geocoding error: $e');
+          if (kDebugMode) print('Geocoding error: $e');
         }
         
         if (mounted) {
@@ -145,10 +146,10 @@ class _WeatherPageState extends State<WeatherPage> {
         }
       }
     } catch (e) {
-      print('Weather Error: $e');
+      if (kDebugMode) print('Weather Error: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error: ${e.toString()}';
+          _errorMessage = 'Unable to load weather data. Please try again.';
           _isLoading = false;
         });
       }

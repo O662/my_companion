@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'dart:io';
 import 'profile.dart';
 import 'tools.dart';
@@ -58,8 +58,9 @@ class _HomePageState extends State<HomePage> {
     if (user != null) {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (!mounted) return;
+      final data = userDoc.data() as Map<String, dynamic>?;
       setState(() {
-        _firstName = userDoc['first_name'];
+        _firstName = data?['first_name'] ?? '';
         _setGreeting();
       });
     }
@@ -95,10 +96,10 @@ class _HomePageState extends State<HomePage> {
 
       // On web, location services check works differently
       if (kIsWeb) {
-        print('Running on web, checking permissions...');
+        if (kDebugMode) print('Running on web, checking permissions...');
         // For web, we'll just try to get permission directly
         permission = await Geolocator.checkPermission();
-        print('Permission status: $permission');
+        if (kDebugMode) print('Permission status: $permission');
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
           if (permission == LocationPermission.denied) {
@@ -147,7 +148,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-    print('Getting current position...');
+    if (kDebugMode) print('Getting current position...');
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.low,
       timeLimit: Duration(seconds: 10),
@@ -161,12 +162,12 @@ class _HomePageState extends State<HomePage> {
     // Check if widget is still mounted after async operation
     if (!mounted) return;
     
-    print('Got position: ${position.latitude}, ${position.longitude}');
+    if (kDebugMode) print('Got position: ${position.latitude}, ${position.longitude}');
     double lat = position.latitude;
     double lon = position.longitude;
 
     // Get placemark (city/state) from coordinates
-    print('Getting placemark...');
+    if (kDebugMode) print('Getting placemark...');
     if (!mounted) return;
     setState(() {
       _coordinates = '$lat, $lon';
@@ -175,7 +176,7 @@ class _HomePageState extends State<HomePage> {
       // Use Nominatim reverse geocoding API that works on all platforms
       final geocodeUrl = Uri.parse('https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json');
       final geocodeResp = await http.get(geocodeUrl, headers: {
-        'User-Agent': 'MyCompanionApp (your@email.com)'
+        'User-Agent': 'MyCompanionApp (https://github.com/O662/my_companion)'
       });
       
       if (!mounted) return;
@@ -229,10 +230,10 @@ class _HomePageState extends State<HomePage> {
         if (!kIsWeb) {
           List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
           if (!mounted) return;
-          print('Placemarks received: ${placemarks.length}');
+          if (kDebugMode) print('Placemarks received: ${placemarks.length}');
           if (placemarks.isNotEmpty) {
             final place = placemarks.first;
-            print('Placemark data - locality: ${place.locality}, subLocality: ${place.subLocality}, subAdmin: ${place.subAdministrativeArea}, admin: ${place.administrativeArea}, country: ${place.country}');
+            if (kDebugMode) print('Placemark data - locality: ${place.locality}, subLocality: ${place.subLocality}, subAdmin: ${place.subAdministrativeArea}, admin: ${place.administrativeArea}, country: ${place.country}');
             
             // Build location string with fallbacks
             String locationName = '';
@@ -281,7 +282,7 @@ class _HomePageState extends State<HomePage> {
               _locationString = '$prefix$fullLocation';
             });
           } else {
-            print('No placemarks returned from geocoding');
+            if (kDebugMode) print('No placemarks returned from geocoding');
             if (!mounted) return;
             setState(() {
               _locationString = 'Location unavailable';
@@ -295,8 +296,8 @@ class _HomePageState extends State<HomePage> {
         }
       }
     } catch (e, stackTrace) {
-      print('Geocoding error: $e');
-      print('Stack trace: $stackTrace');
+      if (kDebugMode) print('Geocoding error: $e');
+      if (kDebugMode) print('Stack trace: $stackTrace');
       // If geocoding fails, show coordinate-based location
       if (!mounted) return;
       setState(() {
@@ -305,23 +306,23 @@ class _HomePageState extends State<HomePage> {
     }
 
     // Get NWS gridpoint for location
-    print('Fetching weather data...');
+    if (kDebugMode) print('Fetching weather data...');
     if (!mounted) return;
     
     final pointsUrl = Uri.parse('https://api.weather.gov/points/$lat,$lon');
     final pointsResp = await http.get(pointsUrl, headers: {
-      'User-Agent': 'MyCompanionApp (your@email.com)'
+      'User-Agent': 'MyCompanionApp (https://github.com/O662/my_companion)'
     });
     
     if (!mounted) return;
     
-    print('Points API response: ${pointsResp.statusCode}');
+    if (kDebugMode) print('Points API response: ${pointsResp.statusCode}');
     if (pointsResp.statusCode == 200) {
       final pointsData = json.decode(pointsResp.body);
       final properties = pointsData['properties'];
       
       if (properties == null) {
-        print('Properties is null');
+        if (kDebugMode) print('Properties is null');
         if (!mounted) return;
         setState(() {
           _currentTemp = 'Weather data unavailable.';
@@ -334,7 +335,7 @@ class _HomePageState extends State<HomePage> {
       final gridY = properties['gridY'];
       
       if (gridId == null || gridX == null || gridY == null) {
-        print('Grid data is null: gridId=$gridId, gridX=$gridX, gridY=$gridY');
+        if (kDebugMode) print('Grid data is null: gridId=$gridId, gridX=$gridX, gridY=$gridY');
         if (!mounted) return;
         setState(() {
           _currentTemp = 'Weather unavailable for this location.';
@@ -342,19 +343,19 @@ class _HomePageState extends State<HomePage> {
         return;
       }
       
-      print('Grid: $gridId $gridX,$gridY');
+      if (kDebugMode) print('Grid: $gridId $gridX,$gridY');
       
       // Get observation stations for this gridpoint
       if (!mounted) return;
       
       final stationsUrl = Uri.parse('https://api.weather.gov/gridpoints/$gridId/$gridX,$gridY/stations');
       final stationsResp = await http.get(stationsUrl, headers: {
-        'User-Agent': 'MyCompanionApp (your@email.com)'
+        'User-Agent': 'MyCompanionApp (https://github.com/O662/my_companion)'
       });
       
       if (!mounted) return;
       
-      print('Stations API response: ${stationsResp.statusCode}');
+      if (kDebugMode) print('Stations API response: ${stationsResp.statusCode}');
       if (stationsResp.statusCode == 200) {
         final stationsData = json.decode(stationsResp.body);
         final features = stationsData['features'];
@@ -362,19 +363,19 @@ class _HomePageState extends State<HomePage> {
         if (features != null && features.isNotEmpty) {
           // Get the nearest station ID
           final nearestStation = features[0]['properties']['stationIdentifier'];
-          print('Nearest station: $nearestStation');
+          if (kDebugMode) print('Nearest station: $nearestStation');
           
           // Get latest observation from the nearest station
           if (!mounted) return;
           
           final observationUrl = Uri.parse('https://api.weather.gov/stations/$nearestStation/observations/latest');
           final observationResp = await http.get(observationUrl, headers: {
-            'User-Agent': 'MyCompanionApp (your@email.com)'
+            'User-Agent': 'MyCompanionApp (https://github.com/O662/my_companion)'
           });
           
           if (!mounted) return;
           
-          print('Observation API response: ${observationResp.statusCode}');
+          if (kDebugMode) print('Observation API response: ${observationResp.statusCode}');
           if (observationResp.statusCode == 200) {
             final observationData = json.decode(observationResp.body);
             final obsProperties = observationData['properties'];
@@ -385,7 +386,7 @@ class _HomePageState extends State<HomePage> {
               if (tempCelsius != null) {
                 // Convert Celsius to Fahrenheit
                 final tempF = (tempCelsius * 9 / 5 + 32).round();
-                print('Current Temperature: $tempF°F');
+                if (kDebugMode) print('Current Temperature: $tempFÂ°F');
                 
                 // Get feels like temperature (heat index or wind chill)
                 String feelsLike = '';
@@ -394,17 +395,17 @@ class _HomePageState extends State<HomePage> {
                 
                 if (heatIndexC != null) {
                   final heatIndexF = (heatIndexC * 9 / 5 + 32).round();
-                  feelsLike = '$heatIndexF°F';
-                  print('Heat Index: $heatIndexF°F');
+                  feelsLike = '$heatIndexFÂ°F';
+                  if (kDebugMode) print('Heat Index: $heatIndexFÂ°F');
                 } else if (windChillC != null) {
                   final windChillF = (windChillC * 9 / 5 + 32).round();
-                  feelsLike = '$windChillF°F';
-                  print('Wind Chill: $windChillF°F');
+                  feelsLike = '$windChillFÂ°F';
+                  if (kDebugMode) print('Wind Chill: $windChillFÂ°F');
                 }
                 
                 if (!mounted) return;
                 setState(() {
-                  _currentTemp = '$tempF°F';
+                  _currentTemp = '$tempFÂ°F';
                   _feelsLikeTemp = feelsLike;
                   _isUsingFallbackTemp = false;
                 });
@@ -412,42 +413,42 @@ class _HomePageState extends State<HomePage> {
                 // Now get today's high and low from forecast
                 _getTodayHighLow(gridId, gridX, gridY);
               } else {
-                print('Temperature value is null, trying hourly forecast instead');
+                if (kDebugMode) print('Temperature value is null, trying hourly forecast instead');
                 // Fallback to hourly forecast if observation is null
                 _getHourlyForecastAsFallback(gridId, gridX, gridY);
               }
             } else {
-              print('Observation properties is null');
+              if (kDebugMode) print('Observation properties is null');
               _getHourlyForecastAsFallback(gridId, gridX, gridY);
             }
           } else {
-            print('Observation API error: ${observationResp.body}');
+            if (kDebugMode) print('Observation API error: ${observationResp.body}');
             _getHourlyForecastAsFallback(gridId, gridX, gridY);
           }
         } else {
-          print('No stations found');
+          if (kDebugMode) print('No stations found');
           if (!mounted) return;
           setState(() {
             _currentTemp = 'No weather stations nearby.';
           });
         }
       } else {
-        print('Stations API error: ${stationsResp.body}');
+        if (kDebugMode) print('Stations API error: ${stationsResp.body}');
         if (!mounted) return;
         setState(() {
           _currentTemp = 'Failed to find weather stations.';
         });
       }
     } else {
-      print('Points API error: ${pointsResp.body}');
+      if (kDebugMode) print('Points API error: ${pointsResp.body}');
       if (!mounted) return;
       setState(() {
         _currentTemp = 'Weather unavailable for this location.';
       });
     }
     } catch (e, stackTrace) {
-      print('Error getting location/weather: $e');
-      print('Stack trace: $stackTrace');
+      if (kDebugMode) print('Error getting location/weather: $e');
+      if (kDebugMode) print('Stack trace: $stackTrace');
       if (!mounted) return;
       setState(() {
         if (e.toString().contains('timed out') || e.toString().contains('TimeoutException')) {
@@ -465,10 +466,10 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     
     try {
-      print('Using hourly forecast temperature as fallback...');
+      if (kDebugMode) print('Using hourly forecast temperature as fallback...');
       final hourlyUrl = Uri.parse('https://api.weather.gov/gridpoints/$gridId/$gridX,$gridY/forecast/hourly');
       final hourlyResp = await http.get(hourlyUrl, headers: {
-        'User-Agent': 'MyCompanionApp (your@email.com)'
+        'User-Agent': 'MyCompanionApp (https://github.com/O662/my_companion)'
       });
       
       if (!mounted) return;
@@ -485,10 +486,10 @@ class _HomePageState extends State<HomePage> {
             final unit = periods[0]['temperatureUnit'];
             
             if (temp != null && unit != null) {
-              print('Hourly Forecast Temperature: $temp°$unit');
+              if (kDebugMode) print('Hourly Forecast Temperature: $tempÂ°$unit');
               if (!mounted) return;
               setState(() {
-                _currentTemp = '$temp°$unit';
+                _currentTemp = '$tempÂ°$unit';
                 _feelsLikeTemp = '';
                 _isUsingFallbackTemp = true;
               });
@@ -505,7 +506,7 @@ class _HomePageState extends State<HomePage> {
       // Get today's high and low regardless
       _getTodayHighLow(gridId, gridX, gridY);
     } catch (e) {
-      print('Error getting hourly forecast temperature: $e');
+      if (kDebugMode) print('Error getting hourly forecast temperature: $e');
       if (!mounted) return;
       setState(() {
         _currentTemp = 'Temperature unavailable.';
@@ -517,10 +518,10 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     
     try {
-      print('Fetching today\'s high/low...');
+      if (kDebugMode) print('Fetching today\'s high/low...');
       final forecastUrl = Uri.parse('https://api.weather.gov/gridpoints/$gridId/$gridX,$gridY/forecast');
       final forecastResp = await http.get(forecastUrl, headers: {
-        'User-Agent': 'MyCompanionApp (your@email.com)'
+        'User-Agent': 'MyCompanionApp (https://github.com/O662/my_companion)'
       });
       
       if (!mounted) return;
@@ -544,9 +545,9 @@ class _HomePageState extends State<HomePage> {
               
               if (temp != null && unit != null) {
                 if (isDaytime == true && high == null) {
-                  high = '$temp°$unit';
+                  high = '$tempÂ°$unit';
                 } else if (isDaytime == false && low == null) {
-                  low = '$temp°$unit';
+                  low = '$tempÂ°$unit';
                 }
               }
               
@@ -559,7 +560,7 @@ class _HomePageState extends State<HomePage> {
               _highTemp = high ?? '--';
               _lowTemp = low ?? '--';
             });
-            print('High: $high, Low: $low');
+            if (kDebugMode) print('High: $high, Low: $low');
             
             // Get next 5 days forecast
             _getMultiDayForecast(periods);
@@ -567,7 +568,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
     } catch (e) {
-      print('Error getting high/low: $e');
+      if (kDebugMode) print('Error getting high/low: $e');
     }
   }
 
@@ -602,7 +603,7 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     
     try {
-      print('Processing 5-day forecast...');
+      if (kDebugMode) print('Processing 5-day forecast...');
       List<Map<String, String>> forecast = [];
       Map<String, Map<String, String>> dayMap = {};
       
@@ -637,13 +638,13 @@ class _HomePageState extends State<HomePage> {
           }
           
           if (isDaytime == true) {
-            dayMap[dayName]!['high'] = '$temp°';
+            dayMap[dayName]!['high'] = '$tempÂ°';
             // Store condition for daytime
             if (shortForecast != null) {
               dayMap[dayName]!['condition'] = shortForecast;
             }
           } else {
-            dayMap[dayName]!['low'] = '$temp°';
+            dayMap[dayName]!['low'] = '$tempÂ°';
           }
         }
       }
@@ -666,9 +667,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _fiveDayForecast = forecast;
       });
-      print('5-day forecast: $_fiveDayForecast');
+      if (kDebugMode) print('5-day forecast: $_fiveDayForecast');
     } catch (e) {
-      print('Error processing 5-day forecast: $e');
+      if (kDebugMode) print('Error processing 5-day forecast: $e');
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -75,7 +76,7 @@ class _RadarPageState extends State<RadarPage> {
         }
       });
     } catch (e) {
-      print('Error getting location: $e');
+      if (kDebugMode) print('Error getting location: $e');
       if (mounted) {
         setState(() => _isLoadingLocation = false);
       }

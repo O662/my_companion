@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'heb_plu_flashcards.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -93,7 +94,7 @@ class _HebPlusPageState extends State<HebPlusPage> {
     } catch (e, st) {
       // If loading fails, log and show an empty list instead of a perpetual spinner.
       // ignore: avoid_print
-      print('Error loading HEBplus.csv: $e\n$st');
+      if (kDebugMode) print('Error loading HEBplus.csv: $e\n$st');
       setState(() {
         _allPluList = <Map<String, String>>[];
         _filteredPluList = <Map<String, String>>[];

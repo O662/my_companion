@@ -10,7 +10,6 @@ import 'allTools/focus.dart';
 import 'allTools/Instacompare.dart';
 import 'allTools/weather.dart';
 import 'allTools/media.dart';
-import 'allTools/media.dart';
 import 'allTools/view_json.dart';
 
 class ToolsPage extends StatefulWidget {

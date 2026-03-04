@@ -320,7 +320,7 @@ class _ProfilePageState extends State<ProfilePage>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e')),
+          const SnackBar(content: Text('Failed to save. Please try again.')),
         );
       }
     } finally {
