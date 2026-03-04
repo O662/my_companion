@@ -386,7 +386,7 @@ class _HomePageState extends State<HomePage> {
               if (tempCelsius != null) {
                 // Convert Celsius to Fahrenheit
                 final tempF = (tempCelsius * 9 / 5 + 32).round();
-                if (kDebugMode) print('Current Temperature: $tempFÂ°F');
+                if (kDebugMode) print('Current Temperature: $tempF°F');
                 
                 // Get feels like temperature (heat index or wind chill)
                 String feelsLike = '';
@@ -395,17 +395,17 @@ class _HomePageState extends State<HomePage> {
                 
                 if (heatIndexC != null) {
                   final heatIndexF = (heatIndexC * 9 / 5 + 32).round();
-                  feelsLike = '$heatIndexFÂ°F';
-                  if (kDebugMode) print('Heat Index: $heatIndexFÂ°F');
+                  feelsLike = '$heatIndexF°F';
+                  if (kDebugMode) print('Heat Index: $heatIndexF°F');
                 } else if (windChillC != null) {
                   final windChillF = (windChillC * 9 / 5 + 32).round();
-                  feelsLike = '$windChillFÂ°F';
-                  if (kDebugMode) print('Wind Chill: $windChillFÂ°F');
+                  feelsLike = '$windChillF°F';
+                  if (kDebugMode) print('Wind Chill: $windChillF°F');
                 }
                 
                 if (!mounted) return;
                 setState(() {
-                  _currentTemp = '$tempFÂ°F';
+                  _currentTemp = '$tempF°F';
                   _feelsLikeTemp = feelsLike;
                   _isUsingFallbackTemp = false;
                 });
@@ -486,10 +486,10 @@ class _HomePageState extends State<HomePage> {
             final unit = periods[0]['temperatureUnit'];
             
             if (temp != null && unit != null) {
-              if (kDebugMode) print('Hourly Forecast Temperature: $tempÂ°$unit');
+              if (kDebugMode) print('Hourly Forecast Temperature: $temp°$unit');
               if (!mounted) return;
               setState(() {
-                _currentTemp = '$tempÂ°$unit';
+                _currentTemp = '$temp°$unit';
                 _feelsLikeTemp = '';
                 _isUsingFallbackTemp = true;
               });
@@ -545,9 +545,9 @@ class _HomePageState extends State<HomePage> {
               
               if (temp != null && unit != null) {
                 if (isDaytime == true && high == null) {
-                  high = '$tempÂ°$unit';
+                  high = '$temp°$unit';
                 } else if (isDaytime == false && low == null) {
-                  low = '$tempÂ°$unit';
+                  low = '$temp°$unit';
                 }
               }
               
@@ -638,13 +638,13 @@ class _HomePageState extends State<HomePage> {
           }
           
           if (isDaytime == true) {
-            dayMap[dayName]!['high'] = '$tempÂ°';
+            dayMap[dayName]!['high'] = '$temp°';
             // Store condition for daytime
             if (shortForecast != null) {
               dayMap[dayName]!['condition'] = shortForecast;
             }
           } else {
-            dayMap[dayName]!['low'] = '$tempÂ°';
+            dayMap[dayName]!['low'] = '$temp°';
           }
         }
       }

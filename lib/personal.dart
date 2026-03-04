@@ -3,6 +3,10 @@ import 'home.dart';
 import 'tools.dart';
 import 'health.dart';
 
+import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'bottom_nav_bar.dart';
 
 class PersonalPage extends StatefulWidget {
@@ -21,6 +25,32 @@ class _PersonalPageState extends State<PersonalPage> {
     'vin': '',
     'mileage': '',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVehicle();
+  }
+
+  Future<void> _loadVehicle() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (!doc.exists) return;
+      final data = doc.data() ?? {};
+      if (!mounted) return;
+      setState(() {
+        _vehicleInfo['make'] = (data['vehicle_brand'] ?? '') as String;
+        _vehicleInfo['model'] = (data['vehicle_model'] ?? '') as String;
+        _vehicleInfo['year'] = (data['vehicle_year'] ?? '') as String;
+        _vehicleInfo['vin'] = (data['vehicle_vin'] ?? '') as String;
+        _vehicleInfo['mileage'] = (data['vehicle_mileage'] ?? '') as String;
+      });
+    } catch (e) {
+      if (kDebugMode) print('Error loading vehicle: $e');
+    }
+  }
 
   // Vehicle maintenance reminders
   final List<Map<String, dynamic>> _maintenanceReminders = [
@@ -113,6 +143,13 @@ class _PersonalPageState extends State<PersonalPage> {
     }
   }
 
+  String _vehicleMakeModel() {
+    final make = _vehicleInfo['make']?.trim() ?? '';
+    final model = _vehicleInfo['model']?.trim() ?? '';
+    if (make.isEmpty && model.isEmpty) return 'No vehicle set';
+    return [make, model].where((s) => s.isNotEmpty).join(' ');
+  }
+
   void _onItemTapped(int index) {
     // Don't navigate if we're already on this page
     if (index == 3) {
@@ -188,7 +225,7 @@ class _PersonalPageState extends State<PersonalPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${_vehicleInfo['year']} ${_vehicleInfo['make']} ${_vehicleInfo['model']}',
+                              _vehicleMakeModel(),
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
