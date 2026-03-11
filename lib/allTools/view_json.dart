@@ -42,6 +42,19 @@ class _ViewJsonPageState extends State<ViewJsonPage> {
   }
 
   Future<void> _viewAnimation(String filePath) async {
+    try {
+      // Try to load and parse the JSON first to catch asset/load errors early
+      final String jsonContent = await rootBundle.loadString(filePath);
+      // Parse to ensure valid JSON
+      json.decode(jsonContent);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load animation "$filePath": $e')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: true,

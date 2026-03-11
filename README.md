@@ -7,4 +7,4 @@ In the terminal:
 
 "flutter run --dart-define-from-file=firebase_env.json" runs the app
 
-"flutter build apk --release" builds apk app to download on phone
+"flutter build apk --dart-define-from-file=firebase_env.json" builds apk app to download on phone
